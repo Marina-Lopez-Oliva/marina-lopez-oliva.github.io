@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Análisis forense digital · Antiforense, recuperación, metadatos y esteganografía | Marina del Pilar López Oliva</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Fira+Code:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#06080c;--surface:#0e1117;--card:#131821;
+  --accent:#00e5a0; --accent2:#a259ff; --gold:#ffd166;
+  --blue:#7eb8ff; --fire:#ff9a3c;
+  --text:#eef0f5; --muted:#6b7280; --border:#1e2530;
+  --mono:'Fira Code',monospace; --display:'Syne',sans-serif; --body:'DM Sans',sans-serif;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--body);overflow-x:hidden;line-height:1.6;}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--blue);border-radius:2px;}
+
+nav{position:fixed;top:0;width:100%;z-index:100;background:rgba(6,8,12,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 6%;}
+.nav-inner{display:flex;justify-content:space-between;align-items:center;}
+.nav-logo{font-family:var(--mono);color:var(--accent);font-size:.85rem;letter-spacing:2px;text-decoration:none;}
+.nav-back{font-family:var(--mono);font-size:.7rem;color:var(--muted);text-decoration:none;letter-spacing:1px;transition:.2s;display:flex;align-items:center;gap:8px;}
+.nav-back:hover{color:var(--accent);}
+
+.proj-hero{min-height:55vh;display:flex;flex-direction:column;justify-content:flex-end;padding:120px 6% 60px;position:relative;overflow:hidden;}
+.proj-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 30% 50%,rgba(126,184,255,.06),transparent);}
+.proj-hero::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 50% 40% at 80% 50%,rgba(0,229,160,.04),transparent);}
+.hero-content{position:relative;z-index:1;max-width:1200px;margin:0 auto;width:100%;}
+.proj-badge{font-family:var(--mono);font-size:.65rem;color:var(--blue);border:1px solid rgba(126,184,255,.3);padding:5px 14px;border-radius:2px;letter-spacing:2px;display:inline-block;margin-bottom:20px;background:rgba(126,184,255,.06);}
+.proj-hero h1{font-family:var(--display);font-size:clamp(2.2rem,6vw,5rem);font-weight:800;letter-spacing:-2px;line-height:.95;margin-bottom:20px;}
+.proj-hero h1 span{color:var(--blue);}
+.proj-meta{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:32px;}
+.meta-item{font-family:var(--mono);font-size:.7rem;color:var(--muted);letter-spacing:1px;display:flex;align-items:center;gap:6px;}
+.meta-item span{color:var(--text);}
+.hero-tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:40px;}
+.tag{font-family:var(--mono);font-size:.6rem;color:var(--accent);border:1px solid rgba(0,229,160,.25);padding:4px 10px;border-radius:2px;letter-spacing:1px;}
+.tag.blue{color:var(--blue);border-color:rgba(126,184,255,.25);}
+.tag.gold{color:var(--gold);border-color:rgba(255,209,102,.25);}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--blue);color:#000;font-family:var(--mono);font-size:.78rem;font-weight:600;padding:12px 28px;border-radius:3px;text-decoration:none;letter-spacing:1px;transition:.2s;}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(126,184,255,.25);}
+.btn-outline{display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--text);font-family:var(--mono);font-size:.78rem;padding:12px 28px;border-radius:3px;text-decoration:none;letter-spacing:1px;border:1px solid var(--border);transition:.2s;}
+.btn-outline:hover{border-color:var(--blue);color:var(--blue);}
+
+.divider{height:1px;background:var(--border);}
+.content{max-width:1200px;margin:0 auto;padding:70px 6%;}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:70px;}
+.summary-card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:24px;position:relative;overflow:hidden;}
+.summary-card::before{content:'';position:absolute;bottom:0;left:0;width:100%;height:2px;background:var(--blue);}
+.summary-card.gold::before{background:var(--gold);}
+.summary-card.purple::before{background:var(--accent2);}
+.summary-label{font-family:var(--mono);font-size:.6rem;color:var(--muted);letter-spacing:2px;margin-bottom:10px;}
+.summary-value{font-family:var(--display);font-size:1.4rem;font-weight:800;color:var(--text);}
+.summary-sub{font-size:.8rem;color:var(--muted);margin-top:4px;}
+
+.section-block{margin-bottom:60px;}
+.section-label{font-family:var(--mono);color:var(--blue);font-size:.7rem;letter-spacing:4px;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.section-title{font-family:var(--display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;margin-bottom:20px;}
+.prose{color:var(--muted);font-size:.97rem;line-height:1.9;}
+.prose strong{color:var(--text);}
+.prose p{margin-bottom:14px;}
+
+.arch-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px;}
+.arch-block{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px 24px;}
+.arch-block h4{font-family:var(--mono);font-size:.72rem;color:var(--blue);letter-spacing:2px;margin-bottom:12px;}
+.arch-block ul{list-style:none;display:flex;flex-direction:column;gap:8px;}
+.arch-block ul li{font-size:.85rem;color:var(--muted);display:flex;align-items:flex-start;gap:10px;line-height:1.5;}
+.arch-block ul li::before{content:'›';color:var(--blue);flex-shrink:0;margin-top:1px;}
+
+.phases{display:flex;flex-direction:column;gap:0;margin-top:24px;position:relative;}
+.phases::before{content:'';position:absolute;left:18px;top:0;bottom:0;width:1px;background:var(--border);}
+.phase{display:flex;gap:28px;padding-bottom:32px;position:relative;}
+.phase-dot{width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.65rem;color:var(--blue);flex-shrink:0;position:relative;z-index:1;}
+.phase-body{flex:1;padding-top:6px;}
+.phase-body h4{font-family:var(--display);font-size:1rem;font-weight:700;margin-bottom:6px;}
+.phase-body p{font-size:.85rem;color:var(--muted);line-height:1.7;}
+.phase-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.phase-tag{font-family:var(--mono);font-size:.58rem;color:var(--muted);border:1px solid var(--border);padding:2px 7px;border-radius:2px;}
+
+.problem-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px;}
+.problem-card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px;}
+.problem-card h4{font-family:var(--mono);font-size:.68rem;color:rgba(255,80,80,.8);letter-spacing:1px;margin-bottom:8px;}
+.problem-card p{font-size:.83rem;color:var(--muted);line-height:1.6;}
+.solution-card{background:var(--card);border:1px solid rgba(126,184,255,.15);border-radius:6px;padding:20px;}
+.solution-card h4{font-family:var(--mono);font-size:.68rem;color:var(--blue);letter-spacing:1px;margin-bottom:8px;}
+.solution-card p{font-size:.83rem;color:var(--muted);line-height:1.6;}
+
+.tech-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:24px;}
+.tech-item{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:14px;text-align:center;}
+.tech-item .tech-name{font-family:var(--mono);font-size:.72rem;color:var(--text);display:block;margin-top:6px;}
+.tech-item .tech-role{font-family:var(--mono);font-size:.58rem;color:var(--muted);display:block;margin-top:3px;}
+
+.downloads-section{background:var(--card);border:1px solid rgba(126,184,255,.2);border-radius:8px;padding:40px;margin-top:70px;}
+.downloads-section h2{font-family:var(--display);font-size:clamp(1.4rem,3vw,2rem);font-weight:800;letter-spacing:-1px;margin-bottom:8px;}
+.downloads-section p{color:var(--muted);font-size:.9rem;margin-bottom:32px;max-width:500px;}
+.dl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+.dl-card{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:10px;transition:.2s;}
+.dl-card:hover{border-color:rgba(126,184,255,.3);}
+.dl-card-icon{font-size:1.6rem;}
+.dl-card-title{font-family:var(--display);font-size:.95rem;font-weight:700;}
+.dl-card-desc{font-size:.78rem;color:var(--muted);line-height:1.5;flex:1;}
+.dl-card-btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:.65rem;color:var(--blue);text-decoration:none;letter-spacing:1px;padding:7px 12px;border:1px solid rgba(126,184,255,.3);border-radius:2px;transition:.2s;width:fit-content;}
+.dl-card-btn:hover{background:rgba(126,184,255,.08);}
+
+.terminal{background:#080c10;border:1px solid var(--border);border-radius:6px;padding:20px 24px;font-family:var(--mono);font-size:.8rem;line-height:2;margin-top:24px;}
+.term-header{display:flex;gap:6px;margin-bottom:16px;}
+.dot{width:10px;height:10px;border-radius:50%;}
+.dot-r{background:#ff5f57;}.dot-y{background:#febc2e;}.dot-g{background:#28c840;}
+.term-line{color:var(--muted);}
+.term-line .prompt{color:var(--accent);}
+.term-line .cmd{color:var(--text);}
+.term-line .out{color:#6b8fa3;}
+.term-success{color:var(--accent);font-weight:bold;}
+.term-warn{color:var(--gold);}
+.cursor-blink{animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+
+.cta-box{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:48px;text-align:center;margin-top:70px;position:relative;overflow:hidden;}
+.cta-box::before{content:'';position:absolute;top:-50%;left:50%;transform:translateX(-50%);width:400px;height:400px;background:radial-gradient(circle,rgba(126,184,255,.04),transparent 70%);}
+.cta-box h2{font-family:var(--display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;margin-bottom:12px;}
+.cta-box p{color:var(--muted);font-size:.93rem;max-width:480px;margin:0 auto 28px;}
+.cta-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+
+footer{text-align:center;padding:32px;color:var(--muted);font-family:var(--mono);font-size:.65rem;letter-spacing:2px;border-top:1px solid var(--border);margin-top:0;}
+
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+
+@media(max-width:900px){
+  .summary-grid{grid-template-columns:1fr 1fr;}
+  .arch-grid{grid-template-columns:1fr;}
+  .problem-grid{grid-template-columns:1fr;}
+  .proj-hero h1{font-size:2.2rem;}
+  .cta-box{padding:36px 24px;}
+}
+@media(max-width:600px){
+  .summary-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="portfolio_marina.html" class="nav-logo">MPLO://sec</a>
+    <a href="portfolio_marina.html#portfolio" class="nav-back">← Volver al portfolio</a>
+  </div>
+</nav>
+
+<section class="proj-hero">
+  <div class="hero-content">
+    <span class="proj-badge">PROYECTO INTEGRADOR · 5 PRÁCTICAS</span>
+    <h1>Análisis forense digital<br><span>Antiforense, recuperación, metadatos y esteganografía</span></h1>
+    <div class="proj-meta">
+      <div class="meta-item">ÁMBITO: <span>Análisis forense · Técnicas antiforenses</span></div>
+      <div class="meta-item">HERRAMIENTAS: <span>SDelete · Recuva · hashcat · John the Ripper · exiftool · okteta</span></div>
+      <div class="meta-item">TÉCNICAS: <span>Borrado seguro · Recuperación · Cracking · Metadatos · Esteganografía</span></div>
+      <div class="meta-item">AÑO: <span>2025</span></div>
+    </div>
+    <div class="hero-tags">
+      <span class="tag blue">Borrado seguro (SDelete)</span>
+      <span class="tag blue">Recuperación (Recuva)</span>
+      <span class="tag">hashcat (mask/hybrid/rule)</span>
+      <span class="tag blue">John the Ripper</span>
+      <span class="tag">ExifTool · Google Lens</span>
+      <span class="tag gold">Esteganografía BMP → PNG</span>
+    </div>
+    <div class="hero-actions">
+      <a href="#downloads" class="btn-primary">↓ Descargar memorias</a>
+      <a href="portfolio_marina.html#portfolio" class="btn-outline">← Ver más proyectos</a>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<div class="content">
+
+  <!-- Resumen rápido -->
+  <div class="summary-grid reveal">
+    <div class="summary-card">
+      <div class="summary-label">PRÁCTICAS</div>
+      <div class="summary-value">5</div>
+      <div class="summary-sub">Borrado seguro · Recuperación · Cracking · Metadatos · Esteganografía</div>
+    </div>
+    <div class="summary-card gold">
+      <div class="summary-label">CONTRASEÑAS RECUPERADAS</div>
+      <div class="summary-value">6</div>
+      <div class="summary-sub">Usuarios Linux, ZIP, PDF, DOCX, XLSX, ODS</div>
+    </div>
+    <div class="summary-card purple">
+      <div class="summary-label">ESTEGANOGRAFÍA</div>
+      <div class="summary-value">PNG oculto en BMP</div>
+      <div class="summary-sub">Mensaje: "Los trabajos de Persiles y Sigismunda"</div>
+    </div>
+  </div>
+
+  <!-- Contexto -->
+  <div class="section-block reveal">
+    <div class="section-label">01_contexto</div>
+    <h2 class="section-title">Técnicas forenses y antiforenses en sistemas digitales</h2>
+    <div class="prose">
+      <p>Este proyecto agrupa cinco prácticas de análisis forense digital y técnicas antiforenses, realizadas para comprender cómo se pueden recuperar datos eliminados, cómo se pueden destruir de forma segura, cómo se pueden recuperar contraseñas de usuarios y documentos, y cómo extraer información oculta de imágenes (metadatos y esteganografía).</p>
+      <p>Las actividades incluyen: (1) <strong>borrado seguro y recuperación de archivos</strong> en USB con SDelete y Recuva, demostrando que el formateo rápido no destruye los datos y que solo el borrado seguro (sobrescritura) los hace irrecuperables; (2) <strong>recuperación de contraseñas de usuarios Linux</strong> mediante hashcat con ataques mask, hybrid y rule-based; (3) <strong>recuperación de contraseñas de archivos</strong> (ZIP, PDF, DOCX, XLSX, ODS) con John the Ripper y office2john/pdf2john/zip2john; (4) <strong>geolocalización a partir de metadatos</strong> de imágenes (exiftool, Google Maps, Google Lens), identificando errores en coordenadas GPS; (5) <strong>esteganografía básica</strong> mediante detección y extracción de un archivo PNG oculto dentro de un BMP analizando cabeceras hexadecimales (okteta).</p>
+    </div>
+  </div>
+
+  <!-- Arquitectura de técnicas forenses -->
+  <div class="section-block reveal">
+    <div class="section-label">02_técnicas</div>
+    <h2 class="section-title">Metodologías forenses aplicadas</h2>
+    <div class="arch-grid">
+      <div class="arch-block">
+        <h4>BORRADO SEGURO Y RECUPERACIÓN (Actividad 1)</h4>
+        <ul>
+          <li>Identificación del dispositivo USB (unidad E:).</li>
+          <li>Borrado seguro con SDelete: <code>sdelete -z E:</code> (sobrescritura con ceros).</li>
+          <li>Copia de archivos de prueba y eliminación normal (papelera).</li>
+          <li>Recuperación con Recuva: análisis profundo, recuperación de nombres y contenido intacto.</li>
+          <li>Formateo rápido del USB y nuevo intento de recuperación.</li>
+          <li>Borrado seguro final con SDelete e intento de recuperación fallido.</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>CRACKING DE HASHES (Actividad 2 y 3)</h4>
+        <ul>
+          <li>Extracción de hashes de /etc/shadow para usuarios Linux (usuario01, usuario02, usuario03).</li>
+          <li><strong>Mask attack (usuario01):</strong> seis dígitos numéricos → <code>-a 3 ?d?d?d?d?d?d</code> → contraseña recuperada.</li>
+          <li><strong>Hybrid attack (usuario02):</strong> diccionario personalizado + dígitos y caracteres especiales → contraseña recuperada.</li>
+          <li><strong>Rule-based attack (usuario03):</strong> rockyou.txt + reglas hashcat → no recuperada por complejidad.</li>
+          <li>Recuperación de contraseñas de ZIP, PDF, DOCX, XLSX, ODS con john2zip, pdf2john, office2john y diccionario rockyou.txt.</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>GEOLOCALIZACIÓN POR METADATOS (Actividad 4)</h4>
+        <ul>
+          <li>Uso de exiftool en Kali Linux para leer metadatos EXIF de imágenes JPEG.</li>
+          <li>Extracción de coordenadas GPS de imagen 100.jpeg (40.4138° N, -3.6925° W) → Museo del Prado, pero la imagen real era el edificio Metrópolis (discrepancia de ~500 m).</li>
+          <li>Análisis de causas: geocoding inverso, ubicación no actualizada, margen de error del GPS.</li>
+          <li>Para imagen 200.jpeg (sin metadatos GPS) → uso de Google Lens → identificación de La Iglesuela del Cid (Teruel).</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>ESTEGANOGRAFÍA (Actividad 5)</h4>
+        <ul>
+          <li>Visualización hexadecimal de Cervantes.bmp con okteta.</li>
+          <li>Identificación de cabecera BMP: <code>42 4D</code>.</li>
+          <li>Cálculo del tamaño real del archivo a partir de los bytes 2-5 (<code>52 21 7D 00</code> → invertir → 0x007D2152 = 8.200.630 bytes).</li>
+          <li>Propiedades del sistema mostraban 8.303.389 bytes → discrepancia → indicio de contenido oculto.</li>
+          <li>Búsqueda de firma PNG (<code>89 50 4E 47</code>) y final IEND (<code>49 45 4E 44</code>).</li>
+          <li>Extracción del bloque PNG y guardado como cervantes.png → revela el mensaje "Los trabajos de Persiles y Sigismunda".</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fases de las prácticas -->
+  <div class="section-block reveal">
+    <div class="section-label">03_implementación</div>
+    <h2 class="section-title">Procedimiento de las prácticas forenses</h2>
+    <div class="phases">
+      <div class="phase">
+        <div class="phase-dot">01</div>
+        <div class="phase-body">
+          <h4>Borrado seguro vs recuperación (USB)</h4>
+          <p>Identificación del USB como unidad E:. Uso de SDelete (<code>sdelete -z E:</code>) para borrado seguro. Copia de archivos de prueba. Borrado normal de dos archivos. Recuperación exitosa con Recuva (análisis profundo). Formateo rápido del USB → Recuva recupera los archivos nuevamente. Borrado seguro con SDelete → Recuva no recupera ningún archivo legible. Conclusión: solo la sobrescritura garantiza la destrucción de datos.</p>
+          <div class="phase-tags"><span class="phase-tag">SDelete</span><span class="phase-tag">Recuva</span><span class="phase-tag">formateo</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">02</div>
+        <div class="phase-body">
+          <h4>Cracking de hashes de usuarios Linux (hashcat)</h4>
+          <p>Creación de tres usuarios (usuario01, usuario02, usuario03) con contraseñas de diferente complejidad. Extracción de /etc/passwd y /etc/shadow. Uso de unify para combinar. usuario01 (6 dígitos) → mask attack (<code>-a 3 ?d?d?d?d?d?d</code>) → contraseña recuperada. usuario02 (diccionario + 2 dígitos + !) → hybrid attack con diccionario personalizado. usuario03 (compleja) → rule-based attack con rockyou.txt → no recuperada en tiempo razonable. Root bloqueado por '!' en shadow.</p>
+          <div class="phase-tags"><span class="phase-tag">hashcat</span><span class="phase-tag">mask attack</span><span class="phase-tag">hybrid</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">03</div>
+        <div class="phase-body">
+          <h4>Recuperación de contraseñas de documentos (John the Ripper)</h4>
+          <p>Uso de zip2john para extraer hash de archivo ZIP → cracking con rockyou.txt → contraseña 'contraseña'. Extracción del ZIP y obtención de documentos protegidos (PDF, DOCX, XLSX, ODS, ODT). pdf2john → hash → rockyou → contraseña 'P@ssw0rd'. office2john para DOCX, XLSX, ODS → todas las contraseñas recuperadas excepto ODT (error de formato).</p>
+          <div class="phase-tags"><span class="phase-tag">zip2john</span><span class="phase-tag">pdf2john</span><span class="phase-tag">rockyou</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">04</div>
+        <div class="phase-body">
+          <h4>Geolocalización por metadatos (exiftool + Google Lens)</h4>
+          <p>Imagen 100.jpeg: exiftool extrae coordenadas GPS (40.4138, -3.6925) que apuntan al Museo del Prado, pero la imagen muestra el edificio Metrópolis (discrepancia de ~500 m). Análisis de causas: geocoding inverso, ubicación no actualizada, margen de error. Imagen 200.jpeg: sin metadatos GPS → Google Lens identifica la ubicación como La Iglesuela del Cid (Teruel), verificada con Google Maps.</p>
+          <div class="phase-tags"><span class="phase-tag">exiftool</span><span class="phase-tag">Google Lens</span><span class="phase-tag">geolocalización</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">05</div>
+        <div class="phase-body">
+          <h4>Esteganografía básica (BMP con PNG oculto)</h4>
+          <p>Análisis hexadecimal de Cervantes.bmp con okteta. Identificación de cabecera BMP (42 4D). Cálculo del tamaño del archivo a partir de bytes 2-5 (52 21 7D 00) → invertir (00 7D 21 52) → decimal 8.200.630 bytes. Propiedades del sistema indicaban 8.303.389 bytes → discrepancia. Búsqueda de firma PNG (89 50 4E 47) y final IEND (49 45 4E 44). Extracción del bloque PNG y guardado como cervantes.png. Visualización de la imagen oculta que revela el mensaje "Los trabajos de Persiles y Sigismunda".</p>
+          <div class="phase-tags"><span class="phase-tag">okteta</span><span class="phase-tag">cabeceras</span><span class="phase-tag">PNG</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hallazgos clave -->
+  <div class="section-block reveal">
+    <div class="section-label">04_hallazgos</div>
+    <h2 class="section-title">Lecciones aprendidas en forense digital</h2>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <h4>Formateo rápido no destruye datos</h4>
+        <p>Tras un formateo rápido, Recuva pudo recuperar todos los archivos con contenido intacto (aunque se perdió la estructura de carpetas).</p>
+      </div>
+      <div class="solution-card">
+        <h4>RECOMENDACIÓN</h4>
+        <p>Para destruir datos de forma segura, usar herramientas de borrado seguro que sobrescriban (SDelete, DBAN, shred) o cifrar el disco completo.</p>
+      </div>
+      <div class="problem-card">
+        <h4>Metadatos GPS no siempre fiables</h4>
+        <p>Las coordenadas de 100.jpeg apuntaban al Museo del Prado, pero la foto era del edificio Metrópolis, a 500 m de distancia. Causas: geocoding inverso, retardo en actualización, margen de error.</p>
+      </div>
+      <div class="solution-card">
+        <h4>RECOMENDACIÓN</h4>
+        <p>Siempre contrastar metadatos con verificación visual (Google Maps, Google Lens, búsqueda inversa) y considerar el contexto de la imagen.</p>
+      </div>
+      <div class="problem-card">
+        <h4>Contraseñas débiles en diccionarios</h4>
+        <p>Las contraseñas de usuario02 y los documentos se recuperaron en segundos con rockyou.txt, que contiene millones de contraseñas reales filtradas.</p>
+      </div>
+      <div class="solution-card">
+        <h4>RECOMENDACIÓN</h4>
+        <p>Usar contraseñas largas (>12 caracteres), aleatorias, con gestor de contraseñas, y nunca reutilizar contraseñas entre servicios.</p>
+      </div>
+      <div class="problem-card">
+        <h4>Esteganografía básica detectable por tamaño</h4>
+        <p>La discrepancia entre el tamaño real del BMP (calculado desde cabecera) y el tamaño del archivo en el sistema alertó de la existencia de contenido oculto.</p>
+      </div>
+      <div class="solution-card">
+        <h4>RECOMENDACIÓN</h4>
+        <p>En análisis forense, verificar cabeceras, tamaños y firmas mágicas. Herramientas como binwalk automatizan la detección de archivos incrustados.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stack tecnológico -->
+  <div class="section-block reveal">
+    <div class="section-label">05_tecnologías</div>
+    <h2 class="section-title">Herramientas forenses utilizadas</h2>
+    <div class="tech-grid">
+      <div class="tech-item"><span class="tech-name">SDelete (Sysinternals)</span><span class="tech-role">Borrado seguro (sobrescritura)</span></div>
+      <div class="tech-item"><span class="tech-name">Recuva</span><span class="tech-role">Recuperación de archivos eliminados</span></div>
+      <div class="tech-item"><span class="tech-name">hashcat</span><span class="tech-role">Cracking de hashes (mask/hybrid/rule)</span></div>
+      <div class="tech-item"><span class="tech-name">John the Ripper</span><span class="tech-role">Cracking de documentos (zip2john, pdf2john)</span></div>
+      <div class="tech-item"><span class="tech-name">office2john</span><span class="tech-role">Extracción de hashes de DOCX/XLSX/ODS</span></div>
+      <div class="tech-item"><span class="tech-name">exiftool</span><span class="tech-role">Lectura de metadatos EXIF</span></div>
+      <div class="tech-item"><span class="tech-name">Google Lens</span><span class="tech-role">Reconocimiento visual de ubicaciones</span></div>
+      <div class="tech-item"><span class="tech-name">okteta</span><span class="tech-role">Editor hexadecimal para esteganografía</span></div>
+      <div class="tech-item"><span class="tech-name">CyberChef</span><span class="tech-role">Conversión hexadecimal/decimal</span></div>
+    </div>
+  </div>
+
+  <!-- Bloque de descargas -->
+  <div class="downloads-section reveal" id="downloads">
+    <h2>📄 Memorias forenses</h2>
+    <p>Documentación completa de las cinco prácticas de análisis forense.</p>
+    <div class="dl-grid">
+      <div class="dl-card">
+        <div class="dl-card-icon">💾</div>
+        <div class="dl-card-title">Borrado seguro y recuperación</div>
+        <div class="dl-card-desc">Comparativa entre eliminación normal, formateo rápido y borrado seguro con SDelete. Recuperación con Recuva. Demostración práctica en USB.</div>
+        <a href="docs/Forense_Borrado_Recuperacion.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">🔑</div>
+        <div class="dl-card-title">Recuperación de contraseñas (hashcat)</div>
+        <div class="dl-card-desc">Cracking de hashes de usuarios Linux con mask attack, hybrid attack y rule-based attack. Contraseñas recuperadas y análisis de complejidad.</div>
+        <a href="docs/Forense_Hashcat_Cracking.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">📄</div>
+        <div class="dl-card-title">Recuperación de contraseñas de documentos</div>
+        <div class="dl-card-desc">Uso de zip2john, pdf2john y office2john con John the Ripper y diccionario rockyou.txt. Contraseñas de ZIP, PDF, DOCX, XLSX, ODS recuperadas.</div>
+        <a href="docs/Forense_Documentos_John.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">📍</div>
+        <div class="dl-card-title">Geolocalización por metadatos</div>
+        <div class="dl-card-desc">Extracción de coordenadas GPS con exiftool, verificación con Google Maps y Google Lens. Análisis de discrepancias y errores en metadatos.</div>
+        <a href="docs/Forense_Metadatos_Geolocalizacion.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">🖼️</div>
+        <div class="dl-card-title">Esteganografía básica</div>
+        <div class="dl-card-desc">Análisis hexadecimal de BMP con okteta, detección de firma PNG, extracción de archivo oculto y revelación del mensaje de Cervantes.</div>
+        <a href="docs/Forense_Esteganografia.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+    </div>
+    <p style="margin-top:24px; font-size:.75rem; color:var(--muted); text-align:center;">📌 Los PDFs deben ubicarse en la carpeta <code>docs/</code> con los nombres mostrados. Ajusta las rutas según tu estructura real.</p>
+  </div>
+
+  <!-- Terminal de conclusiones -->
+  <div class="section-block reveal">
+    <div class="section-label">06_conclusiones</div>
+    <h2 class="section-title">Resultados y lecciones aprendidas</h2>
+    <div class="terminal">
+      <div class="term-header"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+      <div class="term-line"><span class="prompt">marina@forensics:~$</span> <span class="cmd">./evaluate_forensics.sh</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Borrado seguro con SDelete: datos irrecuperables.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Recuva recupera archivos tras eliminación normal y formateo rápido.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] 6 contraseñas recuperadas (usuario01, usuario02, ZIP, PDF, DOCX, XLSX, ODS).</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Usuario03 (contraseña compleja) no recuperada en tiempo razonable.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Metadatos GPS con error de 500 m en imagen 100.jpeg.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Google Lens identifica ubicación correcta de 200.jpeg (La Iglesuela del Cid).</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Esteganografía: PNG oculto extraído de BMP con mensaje literario.</span></div>
+      <div class="term-line"><span class="term-warn">[ MEJORA ] Utilizar binwalk para automatizar detección de archivos incrustados.</span></div>
+      <div class="term-line"><span class="term-warn">[ MEJORA ] Emplear herramientas de adquisición forense como FTK Imager o Autopsy.</span></div>
+      <div class="term-line"><span class="prompt">marina@forensics:~$</span> <span class="cmd">echo "Técnicas forenses completadas según estándares"</span></div>
+      <div class="term-line"><span class="term-success">Técnicas forenses completadas según estándares</span></div>
+      <div class="term-line"><span class="prompt">marina@forensics:~$ <span class="cursor-blink">▊</span></span></div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-box reveal">
+    <h2>¿Necesitas un análisis forense o recuperación de datos?</h2>
+    <p>Este proyecto demuestra que domino las técnicas forenses digitales: borrado seguro, recuperación de archivos, cracking de contraseñas, extracción de metadatos, geolocalización y esteganografía. Contacta conmigo para servicios de análisis forense y recuperación de información.</p>
+    <div class="cta-actions">
+      <a href="portfolio_marina.html#contact" class="btn-primary">→ Contactar</a>
+      <a href="portfolio_marina.html#portfolio" class="btn-outline">← Volver al portfolio</a>
+    </div>
+  </div>
+
+</div>
+
+<footer>MARINA DEL PILAR LÓPEZ OLIVA // ANÁLISIS FORENSE DIGITAL // 2025</footer>
+
+<script>
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

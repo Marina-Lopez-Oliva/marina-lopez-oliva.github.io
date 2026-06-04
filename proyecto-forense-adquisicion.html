@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Adquisición de evidencias forenses · Volátil, no volátil y triaje | Marina del Pilar López Oliva</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Fira+Code:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#06080c;--surface:#0e1117;--card:#131821;
+  --accent:#00e5a0; --accent2:#a259ff; --gold:#ffd166;
+  --blue:#7eb8ff; --fire:#ff9a3c;
+  --text:#eef0f5; --muted:#6b7280; --border:#1e2530;
+  --mono:'Fira Code',monospace; --display:'Syne',sans-serif; --body:'DM Sans',sans-serif;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--body);overflow-x:hidden;line-height:1.6;}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--blue);border-radius:2px;}
+
+nav{position:fixed;top:0;width:100%;z-index:100;background:rgba(6,8,12,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 6%;}
+.nav-inner{display:flex;justify-content:space-between;align-items:center;}
+.nav-logo{font-family:var(--mono);color:var(--accent);font-size:.85rem;letter-spacing:2px;text-decoration:none;}
+.nav-back{font-family:var(--mono);font-size:.7rem;color:var(--muted);text-decoration:none;letter-spacing:1px;transition:.2s;display:flex;align-items:center;gap:8px;}
+.nav-back:hover{color:var(--accent);}
+
+.proj-hero{min-height:55vh;display:flex;flex-direction:column;justify-content:flex-end;padding:120px 6% 60px;position:relative;overflow:hidden;}
+.proj-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 30% 50%,rgba(126,184,255,.06),transparent);}
+.proj-hero::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 50% 40% at 80% 50%,rgba(0,229,160,.04),transparent);}
+.hero-content{position:relative;z-index:1;max-width:1200px;margin:0 auto;width:100%;}
+.proj-badge{font-family:var(--mono);font-size:.65rem;color:var(--blue);border:1px solid rgba(126,184,255,.3);padding:5px 14px;border-radius:2px;letter-spacing:2px;display:inline-block;margin-bottom:20px;background:rgba(126,184,255,.06);}
+.proj-hero h1{font-family:var(--display);font-size:clamp(2.2rem,6vw,5rem);font-weight:800;letter-spacing:-2px;line-height:.95;margin-bottom:20px;}
+.proj-hero h1 span{color:var(--blue);}
+.proj-meta{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:32px;}
+.meta-item{font-family:var(--mono);font-size:.7rem;color:var(--muted);letter-spacing:1px;display:flex;align-items:center;gap:6px;}
+.meta-item span{color:var(--text);}
+.hero-tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:40px;}
+.tag{font-family:var(--mono);font-size:.6rem;color:var(--accent);border:1px solid rgba(0,229,160,.25);padding:4px 10px;border-radius:2px;letter-spacing:1px;}
+.tag.blue{color:var(--blue);border-color:rgba(126,184,255,.25);}
+.tag.gold{color:var(--gold);border-color:rgba(255,209,102,.25);}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--blue);color:#000;font-family:var(--mono);font-size:.78rem;font-weight:600;padding:12px 28px;border-radius:3px;text-decoration:none;letter-spacing:1px;transition:.2s;}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(126,184,255,.25);}
+.btn-outline{display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--text);font-family:var(--mono);font-size:.78rem;padding:12px 28px;border-radius:3px;text-decoration:none;letter-spacing:1px;border:1px solid var(--border);transition:.2s;}
+.btn-outline:hover{border-color:var(--blue);color:var(--blue);}
+
+.divider{height:1px;background:var(--border);}
+.content{max-width:1200px;margin:0 auto;padding:70px 6%;}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:70px;}
+.summary-card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:24px;position:relative;overflow:hidden;}
+.summary-card::before{content:'';position:absolute;bottom:0;left:0;width:100%;height:2px;background:var(--blue);}
+.summary-card.gold::before{background:var(--gold);}
+.summary-card.purple::before{background:var(--accent2);}
+.summary-label{font-family:var(--mono);font-size:.6rem;color:var(--muted);letter-spacing:2px;margin-bottom:10px;}
+.summary-value{font-family:var(--display);font-size:1.4rem;font-weight:800;color:var(--text);}
+.summary-sub{font-size:.8rem;color:var(--muted);margin-top:4px;}
+
+.section-block{margin-bottom:60px;}
+.section-label{font-family:var(--mono);color:var(--blue);font-size:.7rem;letter-spacing:4px;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.section-title{font-family:var(--display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;margin-bottom:20px;}
+.prose{color:var(--muted);font-size:.97rem;line-height:1.9;}
+.prose strong{color:var(--text);}
+.prose p{margin-bottom:14px;}
+
+.arch-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px;}
+.arch-block{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px 24px;}
+.arch-block h4{font-family:var(--mono);font-size:.72rem;color:var(--blue);letter-spacing:2px;margin-bottom:12px;}
+.arch-block ul{list-style:none;display:flex;flex-direction:column;gap:8px;}
+.arch-block ul li{font-size:.85rem;color:var(--muted);display:flex;align-items:flex-start;gap:10px;line-height:1.5;}
+.arch-block ul li::before{content:'›';color:var(--blue);flex-shrink:0;margin-top:1px;}
+
+.phases{display:flex;flex-direction:column;gap:0;margin-top:24px;position:relative;}
+.phases::before{content:'';position:absolute;left:18px;top:0;bottom:0;width:1px;background:var(--border);}
+.phase{display:flex;gap:28px;padding-bottom:32px;position:relative;}
+.phase-dot{width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.65rem;color:var(--blue);flex-shrink:0;position:relative;z-index:1;}
+.phase-body{flex:1;padding-top:6px;}
+.phase-body h4{font-family:var(--display);font-size:1rem;font-weight:700;margin-bottom:6px;}
+.phase-body p{font-size:.85rem;color:var(--muted);line-height:1.7;}
+.phase-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.phase-tag{font-family:var(--mono);font-size:.58rem;color:var(--muted);border:1px solid var(--border);padding:2px 7px;border-radius:2px;}
+
+.problem-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px;}
+.problem-card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px;}
+.problem-card h4{font-family:var(--mono);font-size:.68rem;color:rgba(255,80,80,.8);letter-spacing:1px;margin-bottom:8px;}
+.problem-card p{font-size:.83rem;color:var(--muted);line-height:1.6;}
+.solution-card{background:var(--card);border:1px solid rgba(126,184,255,.15);border-radius:6px;padding:20px;}
+.solution-card h4{font-family:var(--mono);font-size:.68rem;color:var(--blue);letter-spacing:1px;margin-bottom:8px;}
+.solution-card p{font-size:.83rem;color:var(--muted);line-height:1.6;}
+
+.tech-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:24px;}
+.tech-item{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:14px;text-align:center;}
+.tech-item .tech-name{font-family:var(--mono);font-size:.72rem;color:var(--text);display:block;margin-top:6px;}
+.tech-item .tech-role{font-family:var(--mono);font-size:.58rem;color:var(--muted);display:block;margin-top:3px;}
+
+.downloads-section{background:var(--card);border:1px solid rgba(126,184,255,.2);border-radius:8px;padding:40px;margin-top:70px;}
+.downloads-section h2{font-family:var(--display);font-size:clamp(1.4rem,3vw,2rem);font-weight:800;letter-spacing:-1px;margin-bottom:8px;}
+.downloads-section p{color:var(--muted);font-size:.9rem;margin-bottom:32px;max-width:500px;}
+.dl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+.dl-card{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:10px;transition:.2s;}
+.dl-card:hover{border-color:rgba(126,184,255,.3);}
+.dl-card-icon{font-size:1.6rem;}
+.dl-card-title{font-family:var(--display);font-size:.95rem;font-weight:700;}
+.dl-card-desc{font-size:.78rem;color:var(--muted);line-height:1.5;flex:1;}
+.dl-card-btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:.65rem;color:var(--blue);text-decoration:none;letter-spacing:1px;padding:7px 12px;border:1px solid rgba(126,184,255,.3);border-radius:2px;transition:.2s;width:fit-content;}
+.dl-card-btn:hover{background:rgba(126,184,255,.08);}
+
+.terminal{background:#080c10;border:1px solid var(--border);border-radius:6px;padding:20px 24px;font-family:var(--mono);font-size:.8rem;line-height:2;margin-top:24px;}
+.term-header{display:flex;gap:6px;margin-bottom:16px;}
+.dot{width:10px;height:10px;border-radius:50%;}
+.dot-r{background:#ff5f57;}.dot-y{background:#febc2e;}.dot-g{background:#28c840;}
+.term-line{color:var(--muted);}
+.term-line .prompt{color:var(--accent);}
+.term-line .cmd{color:var(--text);}
+.term-line .out{color:#6b8fa3;}
+.term-success{color:var(--accent);font-weight:bold;}
+.term-warn{color:var(--gold);}
+.cursor-blink{animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+
+.cta-box{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:48px;text-align:center;margin-top:70px;position:relative;overflow:hidden;}
+.cta-box::before{content:'';position:absolute;top:-50%;left:50%;transform:translateX(-50%);width:400px;height:400px;background:radial-gradient(circle,rgba(126,184,255,.04),transparent 70%);}
+.cta-box h2{font-family:var(--display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;margin-bottom:12px;}
+.cta-box p{color:var(--muted);font-size:.93rem;max-width:480px;margin:0 auto 28px;}
+.cta-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+
+footer{text-align:center;padding:32px;color:var(--muted);font-family:var(--mono);font-size:.65rem;letter-spacing:2px;border-top:1px solid var(--border);margin-top:0;}
+
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+
+@media(max-width:900px){
+  .summary-grid{grid-template-columns:1fr 1fr;}
+  .arch-grid{grid-template-columns:1fr;}
+  .problem-grid{grid-template-columns:1fr;}
+  .proj-hero h1{font-size:2.2rem;}
+  .cta-box{padding:36px 24px;}
+}
+@media(max-width:600px){
+  .summary-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="portfolio_marina.html" class="nav-logo">MPLO://sec</a>
+    <a href="portfolio_marina.html#portfolio" class="nav-back">← Volver al portfolio</a>
+  </div>
+</nav>
+
+<section class="proj-hero">
+  <div class="hero-content">
+    <span class="proj-badge">PROYECTO INTEGRADOR · 4 PRÁCTICAS</span>
+    <h1>Adquisición de evidencias forenses<br><span>Volátil, no volátil y triaje</span></h1>
+    <div class="proj-meta">
+      <div class="meta-item">MEMORIA VOLÁTIL: <span>FTK Imager · DumpIt · Winpmem</span></div>
+      <div class="meta-item">NO VOLÁTIL: <span>dd · dc3dd · Guymager · FTK · TD2u</span></div>
+      <div class="meta-item">TRIAJE DFIR: <span>CyLR · FastIR · Wintriage</span></div>
+      <div class="meta-item">AÑO: <span>2025</span></div>
+    </div>
+    <div class="hero-tags">
+      <span class="tag blue">Volcado RAM</span>
+      <span class="tag blue">Adquisición de discos</span>
+      <span class="tag blue">Clonadora TD2u</span>
+      <span class="tag gold">Triaje DFIR</span>
+      <span class="tag gold">Formatos RAW / EWF</span>
+      <span class="tag">Cadena de custodia</span>
+    </div>
+    <div class="hero-actions">
+      <a href="#downloads" class="btn-primary">↓ Descargar memorias</a>
+      <a href="portfolio_marina.html#portfolio" class="btn-outline">← Ver más proyectos</a>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<div class="content">
+
+  <!-- Resumen rápido -->
+  <div class="summary-grid reveal">
+    <div class="summary-card">
+      <div class="summary-label">PRÁCTICAS</div>
+      <div class="summary-value">4</div>
+      <div class="summary-sub">Volátil · No volátil software · Hardware TD2u · Triaje</div>
+    </div>
+    <div class="summary-card gold">
+      <div class="summary-label">HERRAMIENTAS</div>
+      <div class="summary-value">10+</div>
+      <div class="summary-sub">FTK, DumpIt, Winpmem, dd, dc3dd, Guymager, TD2u, CyLR, FastIR, Wintriage</div>
+    </div>
+    <div class="summary-card purple">
+      <div class="summary-label">FORMATOS DE IMAGEN</div>
+      <div class="summary-value">RAW · EWF · AD1</div>
+      <div class="summary-sub">Comparativa ventajas/inconvenientes</div>
+    </div>
+  </div>
+
+  <!-- Contexto -->
+  <div class="section-block reveal">
+    <div class="section-label">01_contexto</div>
+    <h2 class="section-title">Metodología de adquisición forense (software y hardware)</h2>
+    <div class="prose">
+      <p>Este proyecto agrupa cuatro prácticas fundamentales de análisis forense digital centradas en la <strong>adquisición de evidencias</strong>, tanto volátiles (memoria RAM) como no volátiles (discos, USBs), utilizando herramientas software (FTK Imager, DumpIt, Winpmem, dd, dc3dd, Guymager) y hardware especializado (clonadora Tableau TD2u). También se cubre el <strong>triaje DFIR</strong> (adquisición rápida de artefactos) con CyLR, FastIR y Wintriage.</p>
+      <p>Las actividades incluyen: (1) <strong>Adquisición de memoria volátil</strong> en Windows 10/7 con tres herramientas, incluyendo diferencias de arquitectura (32/64 bits), fichas de cadena de custodia y comparativas; (2) <strong>Adquisición de discos y dispositivos extraíbles</strong> con dd, dc3dd, Guymager y FTK Imager, comparando formatos RAW vs EWF; (3) <strong>Clonación hardware con TD2u</strong> (clonación física e imagen sobre archivo) con generación automática de hashes y logs; (4) <strong>Triaje DFIR</strong> en Windows 10 con CyLR, FastIR y Wintriage, comparando tiempo de ejecución, tamaño de extracción y nivel de intrusión.</p>
+    </div>
+  </div>
+
+  <!-- Arquitectura de técnicas -->
+  <div class="section-block reveal">
+    <div class="section-label">02_técnicas</div>
+    <h2 class="section-title">Métodos y herramientas de adquisición</h2>
+    <div class="arch-grid">
+      <div class="arch-block">
+        <h4>ADQUISICIÓN DE MEMORIA VOLÁTIL (Práctica 1)</h4>
+        <ul>
+          <li>Preparación: máquina Windows 10/7 con tareas en ejecución (aplicaciones, navegación, YouTube).</li>
+          <li><strong>FTK Imager:</strong> interfaz gráfica, genera archivos .ad1, .mem, .sys + hashes MD5/SHA1 automáticos.</li>
+          <li><strong>DumpIt:</strong> línea de comandos (solo presionar 'y'), archivo .dmp, hash SHA256 automático.</li>
+          <li><strong>Winpmem:</strong> línea de comandos, archivo .raw, no calcula hashes automáticamente.</li>
+          <li>Incompatibilidad 64/32 bits: necesidad de versiones específicas para cada arquitectura.</li>
+          <li>Elaboración de fichas de cadena de custodia con hashes MD5, SHA1, SHA256.</li>
+          <li>Adquisición desde hipervisores: VirtualBox (vboxmanage dumpvmcore → objdump → extracción RAW), VMware (.vmsn con vmss2core), Hyper-V (Debug-VM -InjectNonMaskableInterrupt), Proxmox (instantánea en vivo → .raw).</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>ADQUISICIÓN NO VOLÁTIL (Prácticas 2 y 3)</h4>
+        <ul>
+          <li><strong>Linux (dd / dc3dd):</strong> copia bit a bit, dc3dd añade logs y hashes integrados. Verificación con diff de hashes.</li>
+          <li><strong>Linux (Guymager):</strong> interfaz gráfica, soporte nativo EWF, hashes múltiples, verificación automática.</li>
+          <li><strong>Windows (FTK Imager):</strong> adquisición de discos físicos en formato RAW o EWF, cálculo de MD5/SHA1.</li>
+          <li><strong>Hardware TD2u:</strong> clonación sector por sector (Disk Clone) y creación de imagen forense sobre archivo. Generación automática de hashes y logs en el propio dispositivo. Independencia de SO.</li>
+          <li>Comparativa formatos RAW (copia bit a bit, universal, sin compresión) vs EWF (comprimido, metadatos incrustados, fragmentable).</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>TRIAJE DFIR (Práctica 4)</h4>
+        <ul>
+          <li>Escenario: equipo Windows 10 supuestamente infectado con malware.</li>
+          <li><strong>CyLR:</strong> línea de comandos con parámetros (-of, -od). Más rápida (≈1 min), fichero .zip de 106 MB. Menor rastro en sistema.</li>
+          <li><strong>FastIR:</strong> ejecución directa, genera carpeta con logs y hashes SHA256 por artefacto. Tamaño 24.4 MB.</li>
+          <li><strong>Wintriage:</strong> interfaz gráfica, selección de artefactos (módulos), más pesada (741 MB) y más intrusiva, pero más completa.</li>
+          <li>Elaboración de fichas de cadena de custodia para cada herramienta.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fases de las prácticas -->
+  <div class="section-block reveal">
+    <div class="section-label">03_implementación</div>
+    <h2 class="section-title">Procedimiento de las prácticas forenses</h2>
+    <div class="phases">
+      <div class="phase">
+        <div class="phase-dot">01</div>
+        <div class="phase-body">
+          <h4>Adquisición de memoria volátil (Windows 10/7 + hipervisores)</h4>
+          <p>Preparación de máquinas Windows 10 (64 bits) y Windows 7 (32 bits) con tareas de prueba. Uso de FTK Imager (interfaz gráfica, archivos .ad1/.mem/.sys, hashes MD5/SHA1). DumpIt (ejecutar como admin, presionar 'y', hash SHA256 automático). Winpmem (línea de comandos, archivo .raw, hashes con certutil). Fichas de cadena de custodia para cada evidencia. VirtualBox: volcado con vboxmanage dumpvmcore, extracción de sección LOAD con objdump y conversión a RAW. Documentación de métodos en VMware, Hyper-V y Proxmox.</p>
+          <div class="phase-tags"><span class="phase-tag">FTK Imager</span><span class="phase-tag">DumpIt</span><span class="phase-tag">Winpmem</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">02</div>
+        <div class="phase-body">
+          <h4>Adquisición de discos (Live Tsurugi, Linux, Windows)</h4>
+          <p>Adquisición sin extraer disco: arranque con Tsurugi Live, Guymager en formato EWF, verificación con ewfverify. Adquisición de USB extraído en Linux: deshabilitado automontaje, uso de dd (sin hashes automáticos) y dc3dd (con logs y hashes integrados). Comparativa dd vs dc3dd. Adquisición en Windows con FTK Imager: formatos RAW y EWF, hashes MD5/SHA1. Tablas comparativas de ventajas/inconvenientes de herramientas y formatos.</p>
+          <div class="phase-tags"><span class="phase-tag">dd</span><span class="phase-tag">dc3dd</span><span class="phase-tag">Guymager</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">03</div>
+        <div class="phase-body">
+          <h4>Clonación hardware con TD2u</h4>
+          <p>Configuración de fecha/hora y examinador en la clonadora. Borrado seguro (wiping) del USB destino. Clonación física sector por sector (Disk Clone) de USB origen a USB destino. Verificación automática de hashes y generación de logs (Disk Wipe, Disk Clone). Segunda tarea: creación de imagen forense sobre archivo (modo Image en destino). Generación de archivo de imagen y logs. Reflexión sobre ventajas del hardware frente a software (independencia SO, automatización, audibilidad).</p>
+          <div class="phase-tags"><span class="phase-tag">TD2u</span><span class="phase-tag">clonación</span><span class="phase-tag">imagen forense</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">04</div>
+        <div class="phase-body">
+          <h4>Triaje DFIR en Windows (CyLR, FastIR, Wintriage)</h4>
+          <p>Ejecución de las tres herramientas sobre máquina Windows 10 supuestamente infectada. CyLR: parámetros -of -od, archivo .zip (106 MB, 1 min). FastIR: ejecución directa, carpeta con logs y hashes SHA256 (24.4 MB). Wintriage: interfaz gráfica, selección de módulos, archivo .zip (741 MB). Comparativa: sencillez (Wintriage), velocidad (CyLR), artefactos extraídos (Wintriage), rastro dejado (CyLR). Elaboración de fichas de cadena de custodia.</p>
+          <div class="phase-tags"><span class="phase-tag">CyLR</span><span class="phase-tag">FastIR</span><span class="phase-tag">Wintriage</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comparativas y hallazgos clave -->
+  <div class="section-block reveal">
+    <div class="section-label">04_hallazgos</div>
+    <h2 class="section-title">Comparativas y lecciones aprendidas</h2>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <h4>Herramientas de volcado de RAM</h4>
+        <p>FTK Imager: más completa (múltiples formatos, hashes). DumpIt: más simple y rápida. Winpmem: ligera pero sin hashes automáticos. Incompatibilidad 64/32 bits crítica.</p>
+      </div>
+      <div class="solution-card">
+        <h4>RECOMENDACIÓN</h4>
+        <p>Para peritajes judiciales, usar FTK Imager (por los hashes integrados y cadena de custodia). Para triajes rápidos, DumpIt o Winpmem.</p>
+      </div>
+      <div class="problem-card">
+        <h4>dd vs dc3dd</h4>
+        <p>dd es universal pero no genera hashes ni logs. dc3dd es una mejora forense con logs y verificación integrada.</p>
+      </div>
+      <div class="solution-card">
+        <h4>RECOMENDACIÓN</h4>
+        <p>Siempre que sea posible, usar dc3dd en lugar de dd para garantizar trazabilidad y cadena de custodia.</p>
+      </div>
+      <div class="problem-card">
+        <h4>RAW vs EWF</h4>
+        <p>RAW: copia bit a bit, universal, sin compresión. EWF: comprimido, con metadatos, fragmentable, pero requiere software específico.</p>
+      </div>
+      <div class="solution-card">
+        <h4>RECOMENDACIÓN</h4>
+        <p>Para archivo a largo plazo y eficiencia de almacenamiento: EWF. Para compatibilidad máxima: RAW.</p>
+      </div>
+      <div class="problem-card">
+        <h4>Hardware TD2u vs Software</h4>
+        <p>TD2u es independiente del SO, genera hashes automáticamente, es auditable y más fiable para peritajes judiciales. El software puede dejar rastros en el sistema investigado.</p>
+      </div>
+      <div class="solution-card">
+        <h4>RECOMENDACIÓN</h4>
+        <p>Para evidencias que deban presentarse en juicio, utilizar clonadora hardware TD2u o similar. El software es útil para análisis internos o triajes rápidos.</p>
+      </div>
+      <div class="problem-card">
+        <h4>Triaje DFIR: velocidad vs profundidad</h4>
+        <p>CyLR es el más rápido y ligero (106 MB, 1 min), Wintriage el más completo pero pesado (741 MB) e intrusivo.</p>
+      </div>
+      <div class="solution-card">
+        <h4>RECOMENDACIÓN</h4>
+        <p>Para una primera respuesta (IR): CyLR. Para un análisis más profundo en laboratorio: Wintriage o FastIR.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stack tecnológico -->
+  <div class="section-block reveal">
+    <div class="section-label">05_tecnologías</div>
+    <h2 class="section-title">Herramientas forenses utilizadas</h2>
+    <div class="tech-grid">
+      <div class="tech-item"><span class="tech-name">FTK Imager</span><span class="tech-role">Volcado RAM + discos</span></div>
+      <div class="tech-item"><span class="tech-name">DumpIt</span><span class="tech-role">Volcado RAM rápido</span></div>
+      <div class="tech-item"><span class="tech-name">Winpmem</span><span class="tech-role">Volcado RAM .raw</span></div>
+      <div class="tech-item"><span class="tech-name">dd / dc3dd</span><span class="tech-role">Adquisición discos Linux</span></div>
+      <div class="tech-item"><span class="tech-name">Guymager</span><span class="tech-role">Adquisición gráfica EWF</span></div>
+      <div class="tech-item"><span class="tech-name">Tableau TD2u</span><span class="tech-role">Clonadora hardware</span></div>
+      <div class="tech-item"><span class="tech-name">CyLR</span><span class="tech-role">Triaje DFIR ligero</span></div>
+      <div class="tech-item"><span class="tech-name">FastIR</span><span class="tech-role">Triaje con logs</span></div>
+      <div class="tech-item"><span class="tech-name">Wintriage</span><span class="tech-role">Triaje gráfico completo</span></div>
+      <div class="tech-item"><span class="tech-name">vboxmanage / objdump</span><span class="tech-role">Volcado VirtualBox</span></div>
+    </div>
+  </div>
+
+  <!-- Bloque de descargas -->
+  <div class="downloads-section reveal" id="downloads">
+    <h2>📄 Memorias completas</h2>
+    <p>Documentación de las cuatro prácticas de adquisición forense.</p>
+    <div class="dl-grid">
+      <div class="dl-card">
+        <div class="dl-card-icon">🧠</div>
+        <div class="dl-card-title">Adquisición de memoria volátil</div>
+        <div class="dl-card-desc">Volcado RAM con FTK Imager, DumpIt y Winpmem en Windows 10/7. Fichas de cadena de custodia. Volcado desde VirtualBox, VMware, Hyper-V y Proxmox.</div>
+        <a href="docs/Forense_Adquisicion_Memoria_Volatil.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">💿</div>
+        <div class="dl-card-title">Adquisición no volátil (software)</div>
+        <div class="dl-card-desc">dd, dc3dd, Guymager (Linux) y FTK Imager (Windows). Formatos RAW y EWF. Tablas comparativas de ventajas/inconvenientes.</div>
+        <a href="docs/Forense_Adquisicion_No_Volatil_Software.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">🔌</div>
+        <div class="dl-card-title">Adquisición hardware TD2u</div>
+        <div class="dl-card-desc">Clonación física sector por sector (Disk Clone) e imagen forense sobre archivo (modo Image). Hashes y logs automáticos. Comparativa hardware vs software.</div>
+        <a href="docs/Forense_Adquisicion_Hardware_TD2u.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">⚡</div>
+        <div class="dl-card-title">Triaje DFIR (CyLR, FastIR, Wintriage)</div>
+        <div class="dl-card-desc">Adquisición rápida de artefactos en Windows 10 supuestamente infectado. Comparativa de velocidad, tamaño y nivel de intrusión. Fichas de cadena de custodia.</div>
+        <a href="docs/Forense_Triaje_DFIR.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+    </div>
+    <p style="margin-top:24px; font-size:.75rem; color:var(--muted); text-align:center;">📌 Los PDFs deben ubicarse en la carpeta <code>docs/</code> con los nombres mostrados. Ajusta las rutas según tu estructura real.</p>
+  </div>
+
+  <!-- Terminal de conclusiones -->
+  <div class="section-block reveal">
+    <div class="section-label">06_conclusiones</div>
+    <h2 class="section-title">Resultados y métricas</h2>
+    <div class="terminal">
+      <div class="term-header"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+      <div class="term-line"><span class="prompt">marina@forensics-acq:~$</span> <span class="cmd">./evaluate_acquisition.sh</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Volcados de memoria en Windows 10/64 y Windows 7/32 con 3 herramientas.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Fichas de cadena de custodia elaboradas para todas las evidencias.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Adquisición de discos con dd, dc3dd, Guymager y FTK Imager.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Clonación hardware TD2u (clon físico + imagen sobre archivo) con logs automáticos.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Triaje DFIR: CyLR (1 min, 106 MB), FastIR (24.4 MB), Wintriage (741 MB).</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Comparativa formatos RAW vs EWF, dd vs dc3dd, software vs hardware.</span></div>
+      <div class="term-line"><span class="term-warn">[ MEJORA ] Para peritajes judiciales, priorizar TD2u sobre software.</span></div>
+      <div class="term-line"><span class="term-warn">[ MEJORA ] En triajes de primera respuesta, usar CyLR por su rapidez y bajo impacto.</span></div>
+      <div class="term-line"><span class="prompt">marina@forensics-acq:~$</span> <span class="cmd">echo "Metodología de adquisición forense completa (software y hardware)"</span></div>
+      <div class="term-line"><span class="term-success">Metodología de adquisición forense completa (software y hardware)</span></div>
+      <div class="term-line"><span class="prompt">marina@forensics-acq:~$ <span class="cursor-blink">▊</span></span></div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-box reveal">
+    <h2>¿Necesitas servicios de adquisición forense o triaje DFIR?</h2>
+    <p>Este proyecto demuestra que domino las técnicas de adquisición de evidencias volátiles y no volátiles, tanto con herramientas software como con clonadoras hardware especializadas (TD2u), y que puedo realizar triajes DFIR eficientes en sistemas Windows. Contacta conmigo para servicios de respuesta a incidentes y análisis forense digital.</p>
+    <div class="cta-actions">
+      <a href="portfolio_marina.html#contact" class="btn-primary">→ Contactar</a>
+      <a href="portfolio_marina.html#portfolio" class="btn-outline">← Volver al portfolio</a>
+    </div>
+  </div>
+
+</div>
+
+<footer>MARINA DEL PILAR LÓPEZ OLIVA // ADQUISICIÓN DE EVIDENCIAS FORENSES // 2025</footer>
+
+<script>
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

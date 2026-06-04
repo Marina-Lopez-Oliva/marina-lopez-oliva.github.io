@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Análisis forense de sistemas de almacenamiento · Unidades y tarjetas de memoria | Marina del Pilar López Oliva</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Fira+Code:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#06080c;--surface:#0e1117;--card:#131821;
+  --accent:#00e5a0; --accent2:#a259ff; --gold:#ffd166;
+  --blue:#7eb8ff; --fire:#ff9a3c;
+  --text:#eef0f5; --muted:#6b7280; --border:#1e2530;
+  --mono:'Fira Code',monospace; --display:'Syne',sans-serif; --body:'DM Sans',sans-serif;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--body);overflow-x:hidden;line-height:1.6;}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--blue);border-radius:2px;}
+
+nav{position:fixed;top:0;width:100%;z-index:100;background:rgba(6,8,12,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 6%;}
+.nav-inner{display:flex;justify-content:space-between;align-items:center;}
+.nav-logo{font-family:var(--mono);color:var(--accent);font-size:.85rem;letter-spacing:2px;text-decoration:none;}
+.nav-back{font-family:var(--mono);font-size:.7rem;color:var(--muted);text-decoration:none;letter-spacing:1px;transition:.2s;display:flex;align-items:center;gap:8px;}
+.nav-back:hover{color:var(--accent);}
+
+.proj-hero{min-height:55vh;display:flex;flex-direction:column;justify-content:flex-end;padding:120px 6% 60px;position:relative;overflow:hidden;}
+.proj-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 30% 50%,rgba(126,184,255,.06),transparent);}
+.proj-hero::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 50% 40% at 80% 50%,rgba(0,229,160,.04),transparent);}
+.hero-content{position:relative;z-index:1;max-width:1200px;margin:0 auto;width:100%;}
+.proj-badge{font-family:var(--mono);font-size:.65rem;color:var(--blue);border:1px solid rgba(126,184,255,.3);padding:5px 14px;border-radius:2px;letter-spacing:2px;display:inline-block;margin-bottom:20px;background:rgba(126,184,255,.06);}
+.proj-hero h1{font-family:var(--display);font-size:clamp(2.2rem,6vw,5rem);font-weight:800;letter-spacing:-2px;line-height:.95;margin-bottom:20px;}
+.proj-hero h1 span{color:var(--blue);}
+.proj-meta{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:32px;}
+.meta-item{font-family:var(--mono);font-size:.7rem;color:var(--muted);letter-spacing:1px;display:flex;align-items:center;gap:6px;}
+.meta-item span{color:var(--text);}
+.hero-tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:40px;}
+.tag{font-family:var(--mono);font-size:.6rem;color:var(--accent);border:1px solid rgba(0,229,160,.25);padding:4px 10px;border-radius:2px;letter-spacing:1px;}
+.tag.blue{color:var(--blue);border-color:rgba(126,184,255,.25);}
+.tag.gold{color:var(--gold);border-color:rgba(255,209,102,.25);}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--blue);color:#000;font-family:var(--mono);font-size:.78rem;font-weight:600;padding:12px 28px;border-radius:3px;text-decoration:none;letter-spacing:1px;transition:.2s;}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(126,184,255,.25);}
+.btn-outline{display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--text);font-family:var(--mono);font-size:.78rem;padding:12px 28px;border-radius:3px;text-decoration:none;letter-spacing:1px;border:1px solid var(--border);transition:.2s;}
+.btn-outline:hover{border-color:var(--blue);color:var(--blue);}
+
+.divider{height:1px;background:var(--border);}
+.content{max-width:1200px;margin:0 auto;padding:70px 6%;}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:70px;}
+.summary-card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:24px;position:relative;overflow:hidden;}
+.summary-card::before{content:'';position:absolute;bottom:0;left:0;width:100%;height:2px;background:var(--blue);}
+.summary-card.gold::before{background:var(--gold);}
+.summary-card.purple::before{background:var(--accent2);}
+.summary-label{font-family:var(--mono);font-size:.6rem;color:var(--muted);letter-spacing:2px;margin-bottom:10px;}
+.summary-value{font-family:var(--display);font-size:1.4rem;font-weight:800;color:var(--text);}
+.summary-sub{font-size:.8rem;color:var(--muted);margin-top:4px;}
+
+.section-block{margin-bottom:60px;}
+.section-label{font-family:var(--mono);color:var(--blue);font-size:.7rem;letter-spacing:4px;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.section-title{font-family:var(--display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;margin-bottom:20px;}
+.prose{color:var(--muted);font-size:.97rem;line-height:1.9;}
+.prose strong{color:var(--text);}
+.prose p{margin-bottom:14px;}
+
+.arch-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px;}
+.arch-block{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px 24px;}
+.arch-block h4{font-family:var(--mono);font-size:.72rem;color:var(--blue);letter-spacing:2px;margin-bottom:12px;}
+.arch-block ul{list-style:none;display:flex;flex-direction:column;gap:8px;}
+.arch-block ul li{font-size:.85rem;color:var(--muted);display:flex;align-items:flex-start;gap:10px;line-height:1.5;}
+.arch-block ul li::before{content:'›';color:var(--blue);flex-shrink:0;margin-top:1px;}
+
+.phases{display:flex;flex-direction:column;gap:0;margin-top:24px;position:relative;}
+.phases::before{content:'';position:absolute;left:18px;top:0;bottom:0;width:1px;background:var(--border);}
+.phase{display:flex;gap:28px;padding-bottom:32px;position:relative;}
+.phase-dot{width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.65rem;color:var(--blue);flex-shrink:0;position:relative;z-index:1;}
+.phase-body{flex:1;padding-top:6px;}
+.phase-body h4{font-family:var(--display);font-size:1rem;font-weight:700;margin-bottom:6px;}
+.phase-body p{font-size:.85rem;color:var(--muted);line-height:1.7;}
+.phase-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.phase-tag{font-family:var(--mono);font-size:.58rem;color:var(--muted);border:1px solid var(--border);padding:2px 7px;border-radius:2px;}
+
+.problem-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px;}
+.problem-card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px;}
+.problem-card h4{font-family:var(--mono);font-size:.68rem;color:rgba(255,80,80,.8);letter-spacing:1px;margin-bottom:8px;}
+.problem-card p{font-size:.83rem;color:var(--muted);line-height:1.6;}
+.solution-card{background:var(--card);border:1px solid rgba(126,184,255,.15);border-radius:6px;padding:20px;}
+.solution-card h4{font-family:var(--mono);font-size:.68rem;color:var(--blue);letter-spacing:1px;margin-bottom:8px;}
+.solution-card p{font-size:.83rem;color:var(--muted);line-height:1.6;}
+
+.tech-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:24px;}
+.tech-item{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:14px;text-align:center;}
+.tech-item .tech-name{font-family:var(--mono);font-size:.72rem;color:var(--text);display:block;margin-top:6px;}
+.tech-item .tech-role{font-family:var(--mono);font-size:.58rem;color:var(--muted);display:block;margin-top:3px;}
+
+.downloads-section{background:var(--card);border:1px solid rgba(126,184,255,.2);border-radius:8px;padding:40px;margin-top:70px;}
+.downloads-section h2{font-family:var(--display);font-size:clamp(1.4rem,3vw,2rem);font-weight:800;letter-spacing:-1px;margin-bottom:8px;}
+.downloads-section p{color:var(--muted);font-size:.9rem;margin-bottom:32px;max-width:500px;}
+.dl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+.dl-card{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:10px;transition:.2s;}
+.dl-card:hover{border-color:rgba(126,184,255,.3);}
+.dl-card-icon{font-size:1.6rem;}
+.dl-card-title{font-family:var(--display);font-size:.95rem;font-weight:700;}
+.dl-card-desc{font-size:.78rem;color:var(--muted);line-height:1.5;flex:1;}
+.dl-card-btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:.65rem;color:var(--blue);text-decoration:none;letter-spacing:1px;padding:7px 12px;border:1px solid rgba(126,184,255,.3);border-radius:2px;transition:.2s;width:fit-content;}
+.dl-card-btn:hover{background:rgba(126,184,255,.08);}
+
+.terminal{background:#080c10;border:1px solid var(--border);border-radius:6px;padding:20px 24px;font-family:var(--mono);font-size:.8rem;line-height:2;margin-top:24px;}
+.term-header{display:flex;gap:6px;margin-bottom:16px;}
+.dot{width:10px;height:10px;border-radius:50%;}
+.dot-r{background:#ff5f57;}.dot-y{background:#febc2e;}.dot-g{background:#28c840;}
+.term-line{color:var(--muted);}
+.term-line .prompt{color:var(--accent);}
+.term-line .cmd{color:var(--text);}
+.term-line .out{color:#6b8fa3;}
+.term-success{color:var(--accent);font-weight:bold;}
+.term-warn{color:var(--gold);}
+.cursor-blink{animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+
+.cta-box{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:48px;text-align:center;margin-top:70px;position:relative;overflow:hidden;}
+.cta-box::before{content:'';position:absolute;top:-50%;left:50%;transform:translateX(-50%);width:400px;height:400px;background:radial-gradient(circle,rgba(126,184,255,.04),transparent 70%);}
+.cta-box h2{font-family:var(--display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;margin-bottom:12px;}
+.cta-box p{color:var(--muted);font-size:.93rem;max-width:480px;margin:0 auto 28px;}
+.cta-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+
+footer{text-align:center;padding:32px;color:var(--muted);font-family:var(--mono);font-size:.65rem;letter-spacing:2px;border-top:1px solid var(--border);margin-top:0;}
+
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+
+@media(max-width:900px){
+  .summary-grid{grid-template-columns:1fr 1fr;}
+  .arch-grid{grid-template-columns:1fr;}
+  .problem-grid{grid-template-columns:1fr;}
+  .proj-hero h1{font-size:2.2rem;}
+  .cta-box{padding:36px 24px;}
+}
+@media(max-width:600px){
+  .summary-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="portfolio_marina.html" class="nav-logo">MPLO://sec</a>
+    <a href="portfolio_marina.html#portfolio" class="nav-back">← Volver al portfolio</a>
+  </div>
+</nav>
+
+<section class="proj-hero">
+  <div class="hero-content">
+    <span class="proj-badge">PROYECTO INTEGRADOR · 2 PRÁCTICAS</span>
+    <h1>Análisis forense de sistemas de almacenamiento<br><span>Unidades y tarjetas de memoria</span></h1>
+    <div class="proj-meta">
+      <div class="meta-item">HERRAMIENTAS: <span>The Sleuth Kit (TSK) · PhotoRec · exiftool · binwalk</span></div>
+      <div class="meta-item">CASOS: <span>Unidad de almacenamiento (USB) · Tarjeta SD Fujifilm (1 GB)</span></div>
+      <div class="meta-item">HALLAZGOS: <span>10 fotos de homicidios recuperadas · Cámara identificada · Timeline</span></div>
+      <div class="meta-item">AÑO: <span>2025</span></div>
+    </div>
+    <div class="hero-tags">
+      <span class="tag blue">The Sleuth Kit</span>
+      <span class="tag blue">img_stat / mmls / fsstat</span>
+      <span class="tag blue">fls / icat / istat</span>
+      <span class="tag">PhotoRec (carving)</span>
+      <span class="tag gold">ExifTool</span>
+      <span class="tag">Binwalk / strings</span>
+    </div>
+    <div class="hero-actions">
+      <a href="#downloads" class="btn-primary">↓ Descargar memorias</a>
+      <a href="portfolio_marina.html#portfolio" class="btn-outline">← Ver más proyectos</a>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<div class="content">
+
+  <!-- Resumen rápido -->
+  <div class="summary-grid reveal">
+    <div class="summary-card">
+      <div class="summary-label">PRÁCTICAS</div>
+      <div class="summary-value">2</div>
+      <div class="summary-sub">Análisis de unidad de almacenamiento + tarjeta de memoria</div>
+    </div>
+    <div class="summary-card gold">
+      <div class="summary-label">ARCHIVOS RECUPERADOS</div>
+      <div class="summary-value">10</div>
+      <div class="summary-sub">Fotos homicidios borradas · Formato RAF</div>
+    </div>
+    <div class="summary-card purple">
+      <div class="summary-label">CÁMARA IDENTIFICADA</div>
+      <div class="summary-value">FUJIFILM FinePix S5600</div>
+      <div class="summary-sub">Fechas: 31/05/2013 (18:01-18:17)</div>
+    </div>
+  </div>
+
+  <!-- Contexto -->
+  <div class="section-block reveal">
+    <div class="section-label">01_contexto</div>
+    <h2 class="section-title">Análisis forense de imágenes de dispositivos de almacenamiento</h2>
+    <div class="prose">
+      <p>Este proyecto agrupa dos prácticas de análisis forense digital centradas en la <strong>investigación de sistemas de archivos</strong> de dispositivos de almacenamiento (tarjetas de memoria y unidades USB) utilizando <strong>The Sleuth Kit (TSK)</strong> y otras herramientas forenses auxiliares.</p>
+      <p>La primera práctica corresponde al <strong>análisis de una imagen de unidad de almacenamiento</strong> (posiblemente un USB con sistema FAT16), donde se aplicaron comandos básicos de TSK para explorar la estructura de la imagen, extraer metadatos, listar archivos (incluyendo los eliminados), recuperar contenido mediante <code>icat</code> y examinar el journal (con limitaciones por FAT). Se documentaron comandos como <code>img_stat</code>, <code>mmls</code>, <code>fsstat</code>, <code>fls</code>, <code>ffind</code>, <code>icat</code>, <code>ifind</code>, <code>ils</code>, <code>istat</code> y <code>blkcat</code>.</p>
+      <p>La segunda práctica es un <strong>análisis forense completo de una tarjeta de memoria Fujifilm (1 GB)</strong>, solicitado por un juzgado para determinar: cámara empleada, fechas/horas de las fotografías, datos de geolocalización y posible alteración de datos. Se trabajó sobre una imagen RAW (<code>fujifilm-sd.img</code>). La metodología incluyó verificación de integridad (MD5/SHA1), análisis de partición FAT16, extracción de metadatos con ExifTool, recuperación de archivos borrados con <code>fls -d</code> y PhotoRec, carving de 10 archivos .RAF adicionales, análisis de timeline y búsqueda de evidencias ocultas (strings, binwalk).</p>
+    </div>
+  </div>
+
+  <!-- Arquitectura de técnicas -->
+  <div class="section-block reveal">
+    <div class="section-label">02_técnicas</div>
+    <h2 class="section-title">Herramientas y comandos forenses (TSK)</h2>
+    <div class="arch-grid">
+      <div class="arch-block">
+        <h4>COMANDOS DE TSK PARA ANÁLISIS DE IMÁGENES</h4>
+        <ul>
+          <li><strong>img_stat:</strong> Muestra metadatos de la imagen (tipo de imagen, tamaño, hash MD5).</li>
+          <li><strong>mmls:</strong> Lista las particiones dentro de la imagen (tabla de particiones).</li>
+          <li><strong>fsstat:</strong> Muestra estadísticas del sistema de archivos (tipo, tamaño de sector/cluster, rango de clusters, directorio root).</li>
+          <li><strong>fls:</strong> Lista nombres de archivos y directorios (con opción -r recursivo, -d archivos borrados).</li>
+          <li><strong>ffind:</strong> Busca el nombre de archivo asociado a una estructura de metadatos (inodo).</li>
+          <li><strong>icat:</strong> Extrae el contenido de un archivo especificado por su inodo.</li>
+          <li><strong>ifind:</strong> Busca la estructura de metadatos (inodo) dado un nombre de archivo.</li>
+          <li><strong>ils:</strong> Enumera estructuras de metadatos en formato delimitado (útil para scripting).</li>
+          <li><strong>istat:</strong> Muestra estadísticas detalladas de una estructura de metadatos (inodo).</li>
+          <li><strong>blkcat:</strong> Extrae el contenido exacto de un bloque/unidad de datos específica.</li>
+          <li><strong>jcat / jls:</strong> Herramientas de journal (aunque FAT no tiene journal, se documentó el error).</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>ANÁLISIS DE TARJETA SD (CASO JUDICIAL)</h4>
+        <ul>
+          <li><strong>Verificación de integridad:</strong> Cálculo de MD5/SHA1 de la imagen original (<code>fujifilm-sd.img</code>) y de la copia de trabajo.</li>
+          <li><strong>Montaje en modo solo lectura:</strong> Uso de <code>losetup</code> y <code>mount -o ro,offset</code> para acceder a la partición FAT16.</li>
+          <li><strong>Extracción de metadatos EXIF:</strong> ExifTool sobre los archivos .RAF visibles → cámara FUJIFILM FinePix S5600, fechas 31/05/2013 18:16:51 a 18:17:15.</li>
+          <li><strong>Recuperación de archivos borrados:</strong> <code>fls -d</code> identifica 10 entradas borradas. Carving con PhotoRec recupera los 10 archivos .RAF.</li>
+          <li><strong>Análisis de metadatos de recuperados:</strong> ExifTool revela mismas cámara, fecha 31/05/2013 pero entre 18:01:39 y 18:03:58 (13 minutos antes).</li>
+          <li><strong>Visualización de imágenes:</strong> Las fotos visibles son paisajes; las recuperadas son homicidios.</li>
+          <li><strong>Búsqueda de evidencias ocultas:</strong> strings, binwalk, blkls (espacio no asignado), análisis de thumbnails EXIF.</li>
+          <li><strong>Creación de timeline:</strong> Uso de <code>mactime</code> para generar línea temporal de eventos.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fases de las prácticas -->
+  <div class="section-block reveal">
+    <div class="section-label">03_implementación</div>
+    <h2 class="section-title">Procedimiento forense</h2>
+    <div class="phases">
+      <div class="phase">
+        <div class="phase-dot">01</div>
+        <div class="phase-body">
+          <h4>Análisis de unidad de almacenamiento (comandos TSK)</h4>
+          <p>Verificación de la imagen forense con <code>img_stat</code> para confirmar tipo y tamaño. Análisis de particiones con <code>mmls</code> identificando una partición DOS FAT16 a partir del sector 59. Estudio del sistema de archivos con <code>fsstat</code>: sector 512 bytes, cluster 16384 bytes, rango de clusters 2-63977, directorio root en cluster 2. Listado de archivos con <code>fls -r</code> mostrando estructura de directorios. Identificación de archivos borrados con <code>fls -d</code>. Uso de <code>icat</code> para extraer contenido de un archivo por inodo (ejemplo con inode 12). <code>istat</code> para estadísticas detalladas de un archivo (tamaño, sectores, fechas). Prueba de herramientas de journal (<code>jcat</code>/<code>jls</code>) en FAT16 (error esperado).</p>
+          <div class="phase-tags"><span class="phase-tag">TSK</span><span class="phase-tag">FAT16</span><span class="phase-tag">inodos</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">02</div>
+        <div class="phase-body">
+          <h4>Verificación e integridad (tarjeta SD)</h4>
+          <p>Recepción de la imagen forense <code>fujifilm-sd.img</code> con hashes MD5 (<code>b7a1191cfb1470338ed213e6529b9ca5</code>) y SHA1 proporcionados en la cadena de custodia. Cálculo de hashes de la imagen original → coincidencia. Creación de copia de trabajo <code>work-fujifilm-sd.img</code> y verificación de hashes idénticos. Montaje en modo solo lectura con <code>losetup -r -P</code> y <code>mount -o ro,offset=$((59*512))</code>.</p>
+          <div class="phase-tags"><span class="phase-tag">MD5</span><span class="phase-tag">SHA1</span><span class="phase-tag">cadena custodia</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">03</div>
+        <div class="phase-body">
+          <h4>Extracción de metadatos y análisis de archivos visibles</h4>
+          <p>Uso de <code>exiftool</code> sobre los archivos .RAF de la partición montada. Generación de CSV con metadatos. Resultados: cámara FUJIFILM FinePix S5600, fechas 31/05/2013 entre 18:16:51 y 18:17:15. Sin datos de GPS (cámara no tiene GPS). Visualización de las tres fotos visibles → paisajes.</p>
+          <div class="phase-tags"><span class="phase-tag">exiftool</span><span class="phase-tag">RAF</span><span class="phase-tag">metadatos</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">04</div>
+        <div class="phase-body">
+          <h4>Recuperación de archivos borrados</h4>
+          <p>Ejecución de <code>fls -d</code> para listar entradas borradas en FAT16 (marcadas con _SCF). Identificación de 10 archivos .RAF eliminados. Carving profundo con PhotoRec v7.1 sobre la imagen RAW. Recuperación exitosa de los 10 archivos. Extracción de metadatos con exiftool de los archivos recuperados → misma cámara, fechas 31/05/2013 entre 18:01:39 y 18:03:58 (13 minutos antes que las visibles). Visualización de las imágenes recuperadas → homicidios.</p>
+          <div class="phase-tags"><span class="phase-tag">PhotoRec</span><span class="phase-tag">carving</span><span class="phase-tag">fls -d</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">05</div>
+        <div class="phase-body">
+          <h4>Análisis de evidencias ocultas y timeline</h4>
+          <p>Examen del sector de arranque FAT16 con análisis hexadecimal. Búsqueda de cadenas con <code>strings</code> (no se encontraron textos relevantes). Análisis de espacio no asignado con <code>blkls</code> (sin datos adicionales). Verificación de thumbnails EXIF (sin diferencias). Escaneo con <code>binwalk</code> de todos los archivos (solo firmas .RAF genuinas). Construcción de timeline completo con <code>fls -r -m</code> y <code>mactime</code>. No se encontraron indicios de borrado seguro ni esteganografía.</p>
+          <div class="phase-tags"><span class="phase-tag">timeline</span><span class="phase-tag">binwalk</span><span class="phase-tag">blkls</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">06</div>
+        <div class="phase-body">
+          <h4>Elaboración de informe pericial</h4>
+          <p>Redacción de informe formal dirigido al Juzgado de Instrucción número 1 de Canet de Berenguer, incluyendo: objeto del peritaje, garantía de custodia, antecedentes, metodología, análisis detallado con capturas, conclusiones, anexos con currículum del perito, ficheros adjuntos (CSV con metadatos, hashes de los archivos recuperados) y herramientas utilizadas.</p>
+          <div class="phase-tags"><span class="phase-tag">informe pericial</span><span class="phase-tag">cadena custodia</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hallazgos clave -->
+  <div class="section-block reveal">
+    <div class="section-label">04_hallazgos</div>
+    <h2 class="section-title">Resultados forenses y lecciones aprendidas</h2>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <h4>Identificación de cámara</h4>
+        <p>Todas las fotografías (visibles y recuperadas) fueron tomadas con una FUJIFILM FinePix S5600.</p>
+      </div>
+      <div class="solution-card">
+        <h4>CONCLUSIÓN</h4>
+        <p>La cámara quedó plenamente identificada mediante metadatos EXIF.</p>
+      </div>
+      <div class="problem-card">
+        <h4>Fechas y horas</h4>
+        <p>Fotos visibles (paisajes): 31/05/2013, 18:16:51 a 18:17:15.<br>Fotos borradas (homicidios): 31/05/2013, 18:01:39 a 18:03:58 (13 minutos antes).</p>
+      </div>
+      <div class="solution-card">
+        <h4>CONCLUSIÓN</h4>
+        <p>Existe una diferencia temporal de ~13 minutos entre ambos conjuntos, lo que podría indicar un cambio de ubicación o manipulación intencional. La hora depende de la configuración manual de la cámara, no se puede verificar absoluta.</p>
+      </div>
+      <div class="problem-card">
+        <h4>Datos de geolocalización</h4>
+        <p>No hay metadatos GPS en ninguna de las imágenes.</p>
+      </div>
+      <div class="solution-card">
+        <h4>CONCLUSIÓN</h4>
+        <p>La cámara no dispone de capacidad GPS integrada, por lo que no es posible determinar la localización.</p>
+      </div>
+      <div class="problem-card">
+        <h4>Alteración de datos</h4>
+        <p>No se detectaron evidencias de borrado seguro, esteganografía, fragmentación anómala o manipulación de timestamps.</p>
+      </div>
+      <div class="solution-card">
+        <h4>CONCLUSIÓN</h4>
+        <p>Los datos no fueron alterados después de la eliminación de las 10 fotos de homicidios. El borrado fue normal (marca _SCF en FAT16), no seguro.</p>
+      </div>
+      <div class="problem-card">
+        <h4>Recuperación de archivos borrados</h4>
+        <p>FAT16 no sobrescribe los datos inmediatamente al borrar un archivo (solo marca el primer byte del nombre con _SCF). Los clusters permanecen hasta ser sobrescritos.</p>
+      </div>
+      <div class="solution-card">
+        <h4>CONCLUSIÓN</h4>
+        <p>Las 10 fotos de homicidios eran recuperables mediante carving (PhotoRec) porque no habían sido sobrescritas.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stack tecnológico -->
+  <div class="section-block reveal">
+    <div class="section-label">05_tecnologías</div>
+    <h2 class="section-title">Herramientas forenses utilizadas</h2>
+    <div class="tech-grid">
+      <div class="tech-item"><span class="tech-name">The Sleuth Kit (TSK)</span><span class="tech-role">Análisis de sistemas de archivos</span></div>
+      <div class="tech-item"><span class="tech-name">PhotoRec</span><span class="tech-role">Carving de archivos borrados</span></div>
+      <div class="tech-item"><span class="tech-name">ExifTool</span><span class="tech-role">Extracción de metadatos EXIF</span></div>
+      <div class="tech-item"><span class="tech-name">binwalk</span><span class="tech-role">Detección de firmas mágicas</span></div>
+      <div class="tech-item"><span class="tech-name">strings / hexdump</span><span class="tech-role">Análisis de cadenas y hexadecimal</span></div>
+      <div class="tech-item"><span class="tech-name">blkls</span><span class="tech-role">Análisis de espacio no asignado</span></div>
+      <div class="tech-item"><span class="tech-name">mactime</span><span class="tech-role">Generación de timeline</span></div>
+      <div class="tech-item"><span class="tech-name">RawTherapee</span><span class="tech-role">Visualización de archivos .RAF</span></div>
+      <div class="tech-item"><span class="tech-name">losetup / mount</span><span class="tech-role">Montaje forense</span></div>
+      <div class="tech-item"><span class="tech-name">Kali Linux</span><span class="tech-role">Plataforma forense</span></div>
+    </div>
+  </div>
+
+  <!-- Bloque de descargas -->
+  <div class="downloads-section reveal" id="downloads">
+    <h2>📄 Documentación forense</h2>
+    <p>Memorias de las prácticas de análisis de almacenamiento.</p>
+    <div class="dl-grid">
+      <div class="dl-card">
+        <div class="dl-card-icon">💾</div>
+        <div class="dl-card-title">Análisis de unidad de almacenamiento (TSK)</div>
+        <div class="dl-card-desc">Práctica con comandos básicos de The Sleuth Kit: img_stat, mmls, fsstat, fls, icat, istat, blkcat, etc. Aplicación sobre imagen de unidad FAT16.</div>
+        <a href="docs/Forense_Analisis_Unidad_Almacenamiento_TSK.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">📸</div>
+        <div class="dl-card-title">Writeup · Análisis tarjeta SD (caso judicial)</div>
+        <div class="dl-card-desc">Documento técnico completo del análisis de la imagen fujifilm-sd.img: verificación, montaje, exiftool, recuperación de 10 fotos homicidios, timeline, etc.</div>
+        <a href="docs/Forense_Writeup_Tarjeta_SD.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">⚖️</div>
+        <div class="dl-card-title">Informe pericial · Tarjeta de memoria</div>
+        <div class="dl-card-desc">Informe formal para el Juzgado de Instrucción número 1 de Canet de Berenguer. Incluye objeto, cadena de custodia, análisis detallado, conclusiones y anexos.</div>
+        <a href="docs/Forense_Informe_Pericial_Tarjeta.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+    </div>
+    <p style="margin-top:24px; font-size:.75rem; color:var(--muted); text-align:center;">📌 Los PDFs deben ubicarse en la carpeta <code>docs/</code> con los nombres mostrados. Ajusta las rutas según tu estructura real.</p>
+  </div>
+
+  <!-- Terminal de conclusiones -->
+  <div class="section-block reveal">
+    <div class="section-label">06_conclusiones</div>
+    <h2 class="section-title">Resultados y métricas</h2>
+    <div class="terminal">
+      <div class="term-header"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+      <div class="term-line"><span class="prompt">marina@forensics-storage:~$</span> <span class="cmd">./evaluate_storage_analysis.sh</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Comandos TSK aplicados sobre imagen FAT16 (img_stat, mmls, fsstat, fls, icat, istat).</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Verificación de integridad de imagen tarjeta SD (MD5/SHA1 coincidentes).</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Extracción de metadatos EXIF → cámara FUJIFILM FinePix S5600.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Recuperación de 10 archivos .RAF borrados mediante fls -d y PhotoRec (carving).</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Análisis temporal: fotos homicidios 18:01-18:03, paisajes 18:16-18:17 (31/05/2013).</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] No se detectaron indicios de borrado seguro, esteganografía o manipulación de datos.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Elaboración de informe pericial completo conforme a estándares judiciales.</span></div>
+      <div class="term-line"><span class="term-warn">[ MEJORA ] Implementar análisis de slack space y particiones con herramientas adicionales (Autopsy).</span></div>
+      <div class="term-line"><span class="term-warn">[ MEJORA ] Automatizar timeline con scripts de correlación de eventos.</span></div>
+      <div class="term-line"><span class="prompt">marina@forensics-storage:~$</span> <span class="cmd">echo "Análisis forense de sistemas de almacenamiento completado"</span></div>
+      <div class="term-line"><span class="term-success">Análisis forense de sistemas de almacenamiento completado</span></div>
+      <div class="term-line"><span class="prompt">marina@forensics-storage:~$ <span class="cursor-blink">▊</span></span></div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-box reveal">
+    <h2>¿Necesitas un análisis forense de una unidad de almacenamiento o tarjeta de memoria?</h2>
+    <p>Este proyecto demuestra que domino las técnicas de análisis forense con The Sleuth Kit, recuperación de archivos borrados (carving), extracción de metadatos EXIF, construcción de timelines y elaboración de informes periciales conforme a estándares judiciales. Contacta conmigo para servicios de análisis forense digital.</p>
+    <div class="cta-actions">
+      <a href="portfolio_marina.html#contact" class="btn-primary">→ Contactar</a>
+      <a href="portfolio_marina.html#portfolio" class="btn-outline">← Volver al portfolio</a>
+    </div>
+  </div>
+
+</div>
+
+<footer>MARINA DEL PILAR LÓPEZ OLIVA // ANÁLISIS FORENSE DE SISTEMAS DE ALMACENAMIENTO // 2025</footer>
+
+<script>
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

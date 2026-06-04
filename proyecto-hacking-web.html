@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hacking de aplicaciones web · IDOR, LFI, XSS, CSRF, SQLi y CTFs | Marina del Pilar López Oliva</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Fira+Code:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#06080c;--surface:#0e1117;--card:#131821;
+  --accent:#00e5a0; --accent2:#a259ff; --gold:#ffd166;
+  --red:#ff6b6b; --fire:#ff9a3c;
+  --text:#eef0f5; --muted:#6b7280; --border:#1e2530;
+  --mono:'Fira Code',monospace; --display:'Syne',sans-serif; --body:'DM Sans',sans-serif;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--body);overflow-x:hidden;line-height:1.6;}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--accent2);border-radius:2px;}
+
+nav{position:fixed;top:0;width:100%;z-index:100;background:rgba(6,8,12,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 6%;}
+.nav-inner{display:flex;justify-content:space-between;align-items:center;}
+.nav-logo{font-family:var(--mono);color:var(--accent);font-size:.85rem;letter-spacing:2px;text-decoration:none;}
+.nav-back{font-family:var(--mono);font-size:.7rem;color:var(--muted);text-decoration:none;letter-spacing:1px;transition:.2s;display:flex;align-items:center;gap:8px;}
+.nav-back:hover{color:var(--accent);}
+
+.proj-hero{min-height:55vh;display:flex;flex-direction:column;justify-content:flex-end;padding:120px 6% 60px;position:relative;overflow:hidden;}
+.proj-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 30% 50%,rgba(162,89,255,.06),transparent);}
+.proj-hero::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 50% 40% at 80% 50%,rgba(0,229,160,.04),transparent);}
+.hero-content{position:relative;z-index:1;max-width:1200px;margin:0 auto;width:100%;}
+.proj-badge{font-family:var(--mono);font-size:.65rem;color:var(--accent2);border:1px solid rgba(162,89,255,.3);padding:5px 14px;border-radius:2px;letter-spacing:2px;display:inline-block;margin-bottom:20px;background:rgba(162,89,255,.06);}
+.proj-hero h1{font-family:var(--display);font-size:clamp(2.2rem,6vw,5rem);font-weight:800;letter-spacing:-2px;line-height:.95;margin-bottom:20px;}
+.proj-hero h1 span{color:var(--accent2);}
+.proj-meta{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:32px;}
+.meta-item{font-family:var(--mono);font-size:.7rem;color:var(--muted);letter-spacing:1px;display:flex;align-items:center;gap:6px;}
+.meta-item span{color:var(--text);}
+.hero-tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:40px;}
+.tag{font-family:var(--mono);font-size:.6rem;color:var(--accent);border:1px solid rgba(0,229,160,.25);padding:4px 10px;border-radius:2px;letter-spacing:1px;}
+.tag.purple{color:var(--accent2);border-color:rgba(162,89,255,.25);}
+.tag.gold{color:var(--gold);border-color:rgba(255,209,102,.25);}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--accent2);color:#fff;font-family:var(--mono);font-size:.78rem;font-weight:600;padding:12px 28px;border-radius:3px;text-decoration:none;letter-spacing:1px;transition:.2s;}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(162,89,255,.25);}
+.btn-outline{display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--text);font-family:var(--mono);font-size:.78rem;padding:12px 28px;border-radius:3px;text-decoration:none;letter-spacing:1px;border:1px solid var(--border);transition:.2s;}
+.btn-outline:hover{border-color:var(--accent2);color:var(--accent2);}
+
+.divider{height:1px;background:var(--border);}
+.content{max-width:1200px;margin:0 auto;padding:70px 6%;}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:70px;}
+.summary-card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:24px;position:relative;overflow:hidden;}
+.summary-card::before{content:'';position:absolute;bottom:0;left:0;width:100%;height:2px;background:var(--accent2);}
+.summary-card.gold::before{background:var(--gold);}
+.summary-card.purple::before{background:var(--accent2);}
+.summary-label{font-family:var(--mono);font-size:.6rem;color:var(--muted);letter-spacing:2px;margin-bottom:10px;}
+.summary-value{font-family:var(--display);font-size:1.4rem;font-weight:800;color:var(--text);}
+.summary-sub{font-size:.8rem;color:var(--muted);margin-top:4px;}
+
+.section-block{margin-bottom:60px;}
+.section-label{font-family:var(--mono);color:var(--accent2);font-size:.7rem;letter-spacing:4px;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.section-title{font-family:var(--display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;margin-bottom:20px;}
+.prose{color:var(--muted);font-size:.97rem;line-height:1.9;}
+.prose strong{color:var(--text);}
+.prose p{margin-bottom:14px;}
+
+.arch-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px;}
+.arch-block{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px 24px;}
+.arch-block h4{font-family:var(--mono);font-size:.72rem;color:var(--accent2);letter-spacing:2px;margin-bottom:12px;}
+.arch-block ul{list-style:none;display:flex;flex-direction:column;gap:8px;}
+.arch-block ul li{font-size:.85rem;color:var(--muted);display:flex;align-items:flex-start;gap:10px;line-height:1.5;}
+.arch-block ul li::before{content:'›';color:var(--accent2);flex-shrink:0;margin-top:1px;}
+
+.phases{display:flex;flex-direction:column;gap:0;margin-top:24px;position:relative;}
+.phases::before{content:'';position:absolute;left:18px;top:0;bottom:0;width:1px;background:var(--border);}
+.phase{display:flex;gap:28px;padding-bottom:32px;position:relative;}
+.phase-dot{width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.65rem;color:var(--accent2);flex-shrink:0;position:relative;z-index:1;}
+.phase-body{flex:1;padding-top:6px;}
+.phase-body h4{font-family:var(--display);font-size:1rem;font-weight:700;margin-bottom:6px;}
+.phase-body p{font-size:.85rem;color:var(--muted);line-height:1.7;}
+.phase-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.phase-tag{font-family:var(--mono);font-size:.58rem;color:var(--muted);border:1px solid var(--border);padding:2px 7px;border-radius:2px;}
+
+.problem-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px;}
+.problem-card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px;}
+.problem-card h4{font-family:var(--mono);font-size:.68rem;color:rgba(255,80,80,.8);letter-spacing:1px;margin-bottom:8px;}
+.problem-card p{font-size:.83rem;color:var(--muted);line-height:1.6;}
+.solution-card{background:var(--card);border:1px solid rgba(162,89,255,.15);border-radius:6px;padding:20px;}
+.solution-card h4{font-family:var(--mono);font-size:.68rem;color:var(--accent2);letter-spacing:1px;margin-bottom:8px;}
+.solution-card p{font-size:.83rem;color:var(--muted);line-height:1.6;}
+
+.tech-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:24px;}
+.tech-item{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:14px;text-align:center;}
+.tech-item .tech-name{font-family:var(--mono);font-size:.72rem;color:var(--text);display:block;margin-top:6px;}
+.tech-item .tech-role{font-family:var(--mono);font-size:.58rem;color:var(--muted);display:block;margin-top:3px;}
+
+.downloads-section{background:var(--card);border:1px solid rgba(162,89,255,.2);border-radius:8px;padding:40px;margin-top:70px;}
+.downloads-section h2{font-family:var(--display);font-size:clamp(1.4rem,3vw,2rem);font-weight:800;letter-spacing:-1px;margin-bottom:8px;}
+.downloads-section p{color:var(--muted);font-size:.9rem;margin-bottom:32px;max-width:500px;}
+.dl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+.dl-card{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:10px;transition:.2s;}
+.dl-card:hover{border-color:rgba(162,89,255,.3);}
+.dl-card-icon{font-size:1.6rem;}
+.dl-card-title{font-family:var(--display);font-size:.95rem;font-weight:700;}
+.dl-card-desc{font-size:.78rem;color:var(--muted);line-height:1.5;flex:1;}
+.dl-card-btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:.65rem;color:var(--accent2);text-decoration:none;letter-spacing:1px;padding:7px 12px;border:1px solid rgba(162,89,255,.3);border-radius:2px;transition:.2s;width:fit-content;}
+.dl-card-btn:hover{background:rgba(162,89,255,.08);}
+
+.terminal{background:#080c10;border:1px solid var(--border);border-radius:6px;padding:20px 24px;font-family:var(--mono);font-size:.8rem;line-height:2;margin-top:24px;}
+.term-header{display:flex;gap:6px;margin-bottom:16px;}
+.dot{width:10px;height:10px;border-radius:50%;}
+.dot-r{background:#ff5f57;}.dot-y{background:#febc2e;}.dot-g{background:#28c840;}
+.term-line{color:var(--muted);}
+.term-line .prompt{color:var(--accent);}
+.term-line .cmd{color:var(--text);}
+.term-line .out{color:#6b8fa3;}
+.term-success{color:var(--accent);font-weight:bold;}
+.term-warn{color:var(--gold);}
+.cursor-blink{animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+
+.cta-box{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:48px;text-align:center;margin-top:70px;position:relative;overflow:hidden;}
+.cta-box::before{content:'';position:absolute;top:-50%;left:50%;transform:translateX(-50%);width:400px;height:400px;background:radial-gradient(circle,rgba(162,89,255,.04),transparent 70%);}
+.cta-box h2{font-family:var(--display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;margin-bottom:12px;}
+.cta-box p{color:var(--muted);font-size:.93rem;max-width:480px;margin:0 auto 28px;}
+.cta-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+
+footer{text-align:center;padding:32px;color:var(--muted);font-family:var(--mono);font-size:.65rem;letter-spacing:2px;border-top:1px solid var(--border);margin-top:0;}
+
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+
+@media(max-width:900px){
+  .summary-grid{grid-template-columns:1fr 1fr;}
+  .arch-grid{grid-template-columns:1fr;}
+  .problem-grid{grid-template-columns:1fr;}
+  .proj-hero h1{font-size:2.2rem;}
+  .cta-box{padding:36px 24px;}
+}
+@media(max-width:600px){
+  .summary-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="portfolio_marina.html" class="nav-logo">MPLO://sec</a>
+    <a href="portfolio_marina.html#portfolio" class="nav-back">← Volver al portfolio</a>
+  </div>
+</nav>
+
+<section class="proj-hero">
+  <div class="hero-content">
+    <span class="proj-badge">PROYECTO INTEGRADOR · 7 ACTIVIDADES + CTFs</span>
+    <h1>Hacking de aplicaciones web<br><span>IDOR, LFI/RFI, XSS, CSRF, SQLi y máquinas vulnerables</span></h1>
+    <div class="proj-meta">
+      <div class="meta-item">VULNERABILIDADES: <span>OWASP Top 10 (IDOR, Path Traversal, LFI/RFI, XSS, CSRF, SQLi)</span></div>
+      <div class="meta-item">HERRAMIENTAS: <span>BurpSuite · SQLMap · Metasploit · WPScan · Gobuster</span></div>
+      <div class="meta-item">CTFs: <span>TryHackMe (SQLi, SQLMap, Badbyte, XSS, CSRF) · Vulnyx (SHOP) · Exámenes</span></div>
+      <div class="meta-item">AÑO: <span>2026</span></div>
+    </div>
+    <div class="hero-tags">
+      <span class="tag purple">IDOR · Path Traversal</span>
+      <span class="tag purple">LFI / RFI</span>
+      <span class="tag purple">XSS (reflected, stored, DOM)</span>
+      <span class="tag gold">CSRF (SameSite, token bypass)</span>
+      <span class="tag">SQLi (blind, time-based, UNION)</span>
+      <span class="tag">SQLMap · Pivoting</span>
+    </div>
+    <div class="hero-actions">
+      <a href="#downloads" class="btn-primary">↓ Descargar memorias</a>
+      <a href="portfolio_marina.html#portfolio" class="btn-outline">← Ver más proyectos</a>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<div class="content">
+
+  <!-- Resumen rápido -->
+  <div class="summary-grid reveal">
+    <div class="summary-card">
+      <div class="summary-label">ACTIVIDADES</div>
+      <div class="summary-value">7</div>
+      <div class="summary-sub">IDOR, Path Traversal, LFI/RFI, XSS, CSRF, SQLi, SQLMap, Pivoting</div>
+    </div>
+    <div class="summary-card gold">
+      <div class="summary-label">MÁQUINAS / LABS</div>
+      <div class="summary-value">10+</div>
+      <div class="summary-sub">PortSwigger (6), TryHackMe (5), Vulnyx (SHOP), Exámenes (3)</div>
+    </div>
+    <div class="summary-card purple">
+      <div class="summary-label">TÉCNICAS CLAVE</div>
+      <div class="summary-value">RFI · Shell reversa · Escalada</div>
+      <div class="summary-sub">sudo awk, sudo vim, pkexec (CVE-2021-4034)</div>
+    </div>
+  </div>
+
+  <!-- Contexto -->
+  <div class="section-block reveal">
+    <div class="section-label">01_contexto</div>
+    <h2 class="section-title">Explotación de vulnerabilidades web y resolución de CTFs</h2>
+    <div class="prose">
+      <p>Este proyecto agrupa todas las prácticas de hacking enfocadas en <strong>vulnerabilidades de aplicaciones web</strong> (OWASP Top 10) y la resolución de máquinas CTF que combinan técnicas de explotación web con escalada de privilegios y pivoting. Se han realizado actividades guiadas (PortSwigger, TryHackMe) y máquinas reales de Vulnyx y exámenes prácticos.</p>
+      <p>Las vulnerabilidades cubiertas incluyen: <strong>IDOR</strong> (Insecure Direct Object Reference), <strong>Path Traversal</strong> (6 variantes), <strong>Local/Remote File Inclusion</strong> (LFI/RFI), <strong>Cross-Site Scripting</strong> (XSS: reflected, stored, DOM, 6 niveles), <strong>Cross-Site Request Forgery</strong> (CSRF con bypass de Double Submit Cookie y SameSite), e <strong>Inyección SQL</strong> (UNION, boolean blind, time-based, con SQLMap).</p>
+      <p>Además, se han resuelto máquinas completas como <strong>SHOP (Vulnyx)</strong> (Blind SQLi → credenciales → SSH → escalada con perl + cap_setuid), <strong>Badbyte (TryHackMe)</strong> (FTP con clave SSH → túnel SOCKS5 → plugin wp-file-manager vulnerable → escalada), y los exámenes de pre-examen y examen 3 (pivoting, RFI, WordPress, wp-file-manager, escalada con awk y vim).</p>
+    </div>
+  </div>
+
+  <!-- Arquitectura de técnicas -->
+  <div class="section-block reveal">
+    <div class="section-label">02_técnicas</div>
+    <h2 class="section-title">Vulnerabilidades OWASP explotadas</h2>
+    <div class="arch-grid">
+      <div class="arch-block">
+        <h4>IDOR + PATH TRAVERSAL (Actividad 18)</h4>
+        <ul>
+          <li><strong>IDOR:</strong> Cambio de ID en /download-transcript/X.txt para obtener la contraseña de otro usuario (BurpSuite Repeater).</li>
+          <li><strong>Path Traversal (6 labs PortSwigger):</strong> Bypass con rutas absolutas, secuencias anidadas (....//), doble codificación URL, validación de inicio de directorio y null byte bypass (%00).</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>FILE INCLUSION (LFI / RFI - Actividad 19)</h4>
+        <ul>
+          <li><strong>LFI:</strong> Subida de reverse shell .php.png (doble extensión) e inclusión desde parámetro lang. Escalada con contraseña en directorio oculto y sudo find.</li>
+          <li><strong>RFI:</strong> Vulnerabilidad en plugin gwolle-gb (versión 1.5.3) → parámetro abspath permite incluir wp-load.php remoto. Shell reversa y escalada con rename (Perl) sobrescribiendo /etc/passwd.</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>XSS (Actividad 20)</h4>
+        <ul>
+          <li>TryHackMe XSS room + 6 niveles de XSS game: reflected, stored en &lt;blockquote&gt; (imagen con onerror), DOM-based (hash de URL), time-based (?timer), javascript: pseudo-protocol, data:text/javascript.</li>
+          <li>Explicación detallada del DOM Based XSS (funcionamiento paso a paso).</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>CSRF (Actividad 21)</h4>
+        <ul>
+          <li>CSRF básico: enlace GET para transferencia bancaria.</li>
+          <li>Double Submit Cookie bypass: token predecible (Base64 del número de cuenta) e inyección de cookie desde subdominio.</li>
+          <li>SameSite=Lax bypass: cierre de sesión mediante enlace GET y modificación de cookie isBanned en ventana de 2 minutos.</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>SQL INJECTION (Actividades 22 y 23)</h4>
+        <ul>
+          <li>In-band (UNION): extracción de credenciales de tabla staff_users.</li>
+          <li>Blind boolean: endpoint /checkuser?username= con cambios en respuesta.</li>
+          <li>Blind time-based: función SLEEP(n) para extraer información carácter a carácter.</li>
+          <li>SQLMap: automatización de la máquina SHOP (Vulnyx) – detección de blind time-based, enumeración de base de datos Webapp, tabla Users, credenciales (bart, liam, mike, peter).</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>PIVOTING Y MÁQUINAS CTF (Actividad 24 + exámenes)</h4>
+        <ul>
+          <li><strong>Badbyte (TryHackMe):</strong> FTP anónimo (clave SSH id_rsa) → crackeo con ssh2john → túnel SOCKS5 → descubrimiento de WordPress interno → wp-file-manager (CVE-2020-25213) → Meterpreter → escalada con contraseña en logs de bash.</li>
+          <li><strong>Máquina SHOP (Vulnyx):</strong> Blind SQLi en login → SQLMap → credenciales → acceso SSH → escalada con perl (cap_setuid+ep) → persistencia.</li>
+          <li><strong>Pre-examen:</strong> RFI en change_theme.php (shell reversa) → credenciales en config.php → usuario webuser → sudo awk → root → pivoting a red interna → index_old.html estático (sin explotación).</li>
+          <li><strong>Examen 3:</strong> Máquina espigol (RFI, webuser, sudo awk) y máquina cibercamp (WordPress wp-file-manager, reutilización de credenciales, sudo vim → root).</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fases de implementación -->
+  <div class="section-block reveal">
+    <div class="section-label">03_actividades</div>
+    <h2 class="section-title">Resumen de actividades realizadas</h2>
+    <div class="phases">
+      <div class="phase">
+        <div class="phase-dot">18</div>
+        <div class="phase-body">
+          <h4>IDOR + Path Traversal (PortSwigger)</h4>
+          <p>Explotación de IDOR en chat de laboratorio: cambio de ID de transcripción (1.txt) para obtener contraseña de otro usuario. 6 laboratorios de Path Traversal: casos básicos, ruta absoluta, bypass no recursivo (....//), doble URL encode, validación de prefijo de ruta y null byte bypass. Uso de BurpSuite Repeater y curl.</p>
+          <div class="phase-tags"><span class="phase-tag">IDOR</span><span class="phase-tag">Path Traversal</span><span class="phase-tag">BurpSuite</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">19</div>
+        <div class="phase-body">
+          <h4>File Inclusion (LFI + RFI) – Máquinas prácticas</h4>
+          <p>LFI: formulario de subida con validación de extensión (doble extensión .php.png). Reverse shell en PHP, subida y acceso mediante parámetro lang. Escalada a root: contraseña de bassam encontrada en directorio oculto, sudo find -exec. RFI: plugin gwolle-gb vulnerable (abspath) → inclusión remota de wp-load.php malicioso → shell reversa → escalada con rename (Perl) para sobrescribir /etc/passwd.</p>
+          <div class="phase-tags"><span class="phase-tag">LFI</span><span class="phase-tag">RFI</span><span class="phase-tag">sudo find</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">20</div>
+        <div class="phase-body">
+          <h4>XSS (TryHackMe + XSS Game)</h4>
+          <p>TryHackMe XSS room: explotación de XSS reflejado y almacenado, robo de cookies (PHPSESSID). XSS Game (6 niveles): reflected básico, stored en blockquote (onerror), DOM-based (hash de URL), time-based (?timer=), javascript: pseudo-protocol en href, data:text/javascript. Explicación detallada del DOM Based XSS.</p>
+          <div class="phase-tags"><span class="phase-tag">XSS</span><span class="phase-tag">DOM</span><span class="phase-tag">cookie stealing</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">21</div>
+        <div class="phase-body">
+          <h4>CSRF (TryHackMe CSRFv2)</h4>
+          <p>CSRF básico: enlace GET que realiza transferencia bancaria. Double Submit Cookie: token predecible (Base64 de número de cuenta) e inyección de cookie desde subdominio. SameSite=Lax: cierre de sesión mediante enlace GET y modificación de cookie isBanned aprovechando ventana de 2 minutos de Chrome.</p>
+          <div class="phase-tags"><span class="phase-tag">CSRF</span><span class="phase-tag">SameSite</span><span class="phase-tag">Double Submit</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">22</div>
+        <div class="phase-body">
+          <h4>SQL Injection + Máquina SHOP (Vulnyx)</h4>
+          <p>TryHackMe SQLi: in-band (UNION), blind boolean (endpoint /checkuser), blind time-based (SLEEP). Máquina SHOP: formulario de login vulnerable a Blind Time-Based SQLi. SQLMap manual: enumeración de base de datos Webapp, tabla Users, extracción de credenciales (bart, liam, mike, peter). Acceso SSH y escalada con perl (cap_setuid+ep).</p>
+          <div class="phase-tags"><span class="phase-tag">SQLi</span><span class="phase-tag">time-based</span><span class="phase-tag">SQLMap</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">23</div>
+        <div class="phase-body">
+          <h4>SQLMap (TryHackMe + SHOP)</h4>
+          <p>TryHackMe SQLMap: uso de SQLMap contra petición POST en /blood, detección de base de datos 'blood', extracción de tabla 'flag' (flag: thm{tsqlm@p_is_Love}). Máquina SHOP (repaso): automatización completa con --forms y --dump, validación de credenciales y acceso SSH.</p>
+          <div class="phase-tags"><span class="phase-tag">SQLMap</span><span class="phase-tag">automatización</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">24</div>
+        <div class="phase-body">
+          <h4>Pivoting (TryHackMe Badbyte + SHOP)</h4>
+          <p>Badbyte: FTP anónimo (id_rsa, note.txt) → crackeo con ssh2john → conexión SSH con túnel SOCKS5 (proxychains) → descubrimiento de WordPress interno → plugin wp-file-manager vulnerable (CVE-2020-25213) → Metasploit → Meterpreter → escalada con contraseña en logs. Máquina SHOP: acceso SSH inicial como bart → enumeración de red interna (172.17.0.2) → túnel SSH dinámico → explotación de Drupal (CVE-2018-7600) → credenciales en settings.php → escalada a root.</p>
+          <div class="phase-tags"><span class="phase-tag">pivoting</span><span class="phase-tag">SOCKS5</span><span class="phase-tag">Drupal</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">Ex</div>
+        <div class="phase-body">
+          <h4>Exámenes prácticos (Pre-examen + Examen 3)</h4>
+          <p>Pre-examen: RFI en change_theme.php (reverse shell) → credenciales webuser en config.php → sudo awk → root → pivoting a red 192.168.10.8/26 → index_old.html estático. Examen 3: máquina espigol (mismo vector RFI → awk → root) y máquina cibercamp (WordPress con wp-file-manager → credenciales reutilizadas → sudo vim → root). Red interna costas no vulnerable.</p>
+          <div class="phase-tags"><span class="phase-tag">RFI</span><span class="phase-tag">pivoting</span><span class="phase-tag">sudo awk/vim</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Problemas y soluciones (hallazgos clave) -->
+  <div class="section-block reveal">
+    <div class="section-label">04_hallazgos</div>
+    <h2 class="section-title">Vulnerabilidades críticas y lecciones aprendidas</h2>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <h4>Path Traversal – Null Byte Bypass</h4>
+        <p>La aplicación validaba extensión .png, pero con %00 se truncaba la cadena: ../../../etc/passwd%00.png</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN / MITIGACIÓN</h4>
+        <p>Validar rutas con funciones seguras (basename), no depender de extensiones y desinfectar caracteres nulos.</p>
+      </div>
+      <div class="problem-card">
+        <h4>RFI en change_theme.php y gwolle-gb</h4>
+        <p>Inclusión remota de archivos permitía ejecutar reverse shells en PHP.</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN / MITIGACIÓN</h4>
+        <p>Deshabilitar allow_url_include, usar listas blancas de archivos locales, actualizar plugins.</p>
+      </div>
+      <div class="problem-card">
+        <h4>XSS DOM-based en el hash de la URL</h4>
+        <p>El código JavaScript leía window.location.hash y lo insertaba en el DOM sin sanitizar.</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN / MITIGACIÓN</h4>
+        <p>Usar textContent/innerText en lugar de innerHTML, escapar datos de origen del cliente.</p>
+      </div>
+      <div class="problem-card">
+        <h4>Double Submit Cookie token predecible</h4>
+        <p>El token CSRF era el número de cuenta en Base64, fácilmente reversible.</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN / MITIGACIÓN</h4>
+        <p>Generar tokens criptográficamente aleatorios y asociarlos a la sesión, no predecibles.</p>
+      </div>
+      <div class="problem-card">
+        <h4>Blind Time-Based SQLi en login de SHOP</h4>
+        <p>El parámetro username vulnerable a SLEEP(5), permitiendo extraer información.</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN / MITIGACIÓN</h4>
+        <p>Usar consultas parametrizadas (prepared statements), no concatenar inputs.</p>
+      </div>
+      <div class="problem-card">
+        <h4>Reutilización de contraseñas (webuser / wpuser)</h4>
+        <p>La misma contraseña se usaba en base de datos y para el usuario del sistema operativo.</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN / MITIGACIÓN</h4>
+        <p>Políticas de contraseñas únicas por servicio, separación de credenciales.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stack tecnológico -->
+  <div class="section-block reveal">
+    <div class="section-label">05_tecnologías</div>
+    <h2 class="section-title">Herramientas y plataformas</h2>
+    <div class="tech-grid">
+      <div class="tech-item"><span class="tech-name">BurpSuite</span><span class="tech-role">Proxy, Repeater, Intruder</span></div>
+      <div class="tech-item"><span class="tech-name">SQLMap</span><span class="tech-role">Automatización SQLi</span></div>
+      <div class="tech-item"><span class="tech-name">Metasploit</span><span class="tech-role">Explotación (wp-file-manager)</span></div>
+      <div class="tech-item"><span class="tech-name">WPScan</span><span class="tech-role">Enumeración WordPress</span></div>
+      <div class="tech-item"><span class="tech-name">Gobuster / ffuf</span><span class="tech-role">Fuzzing de directorios</span></div>
+      <div class="tech-item"><span class="tech-name">Hydra / ssh2john</span><span class="tech-role">Cracking de claves</span></div>
+      <div class="tech-item"><span class="tech-name">Proxychains / SSH</span><span class="tech-role">Pivoting y túneles</span></div>
+      <div class="tech-item"><span class="tech-name">Netcat / Python</span><span class="tech-role">Reverse shells</span></div>
+    </div>
+  </div>
+
+  <!-- Bloque de descargas -->
+  <div class="downloads-section reveal" id="downloads">
+    <h2>📄 Memorias y writeups</h2>
+    <p>Documentación completa de todas las actividades y máquinas resueltas.</p>
+    <div class="dl-grid">
+      <div class="dl-card">
+        <div class="dl-card-icon">🔍</div>
+        <div class="dl-card-title">Actividad 18 – IDOR + Path Traversal</div>
+        <div class="dl-card-desc">Laboratorios PortSwigger: IDOR en chat, 6 variantes de Path Traversal (absolute path, double URL encode, null byte, etc.).</div>
+        <a href="docs/Actividad18_IDOR_PathTraversal.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">📂</div>
+        <div class="dl-card-title">Actividad 19 – LFI / RFI</div>
+        <div class="dl-card-desc">Máquina con LFI (subida doble extensión + inclusión) y RFI (plugin gwolle-gb vulnerable). Escaladas con sudo find y rename.</div>
+        <a href="docs/Actividad19_LFI_RFI.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">⚠️</div>
+        <div class="dl-card-title">Actividad 20 – XSS</div>
+        <div class="dl-card-desc">TryHackMe XSS room + XSS Game (6 niveles). Explicación DOM Based XSS. Robo de cookies.</div>
+        <a href="docs/Actividad20_XSS.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">🔄</div>
+        <div class="dl-card-title">Actividad 21 – CSRF</div>
+        <div class="dl-card-desc">CSRF básico, bypass de Double Submit Cookie, bypass de SameSite=Lax (ventana 2 minutos).</div>
+        <a href="docs/Actividad21_CSRF.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">💉</div>
+        <div class="dl-card-title">Actividad 22 – SQLi + Máquina SHOP</div>
+        <div class="dl-card-desc">TryHackMe SQLi (UNION, boolean, time). Máquina SHOP: Blind time-based SQLi, SQLMap manual, credenciales, SSH y escalada con perl.</div>
+        <a href="docs/Actividad22_SQLi_SHOP.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">⚙️</div>
+        <div class="dl-card-title">Actividad 23 – SQLMap + SHOP</div>
+        <div class="dl-card-desc">TryHackMe SQLMap (base de datos blood, flag). SHOP (automatización con --forms).</div>
+        <a href="docs/Actividad23_SQLMap.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">🕸️</div>
+        <div class="dl-card-title">Actividad 24 – Pivoting (Badbyte + SHOP)</div>
+        <div class="dl-card-desc">Badbyte: FTP, crackeo de clave SSH, túnel SOCKS5, wp-file-manager, Meterpreter. SHOP: pivoting interno, Drupalgeddon, escalada.</div>
+        <a href="docs/Actividad24_Pivoting.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">📝</div>
+        <div class="dl-card-title">Writeups exámenes</div>
+        <div class="dl-card-desc">Pre-examen (preex1, preex2, pivoting) y Examen 3 (espigol, cibercamp, costas). Técnicas RFI, awk, vim, wp-file-manager.</div>
+        <a href="docs/Writeup_PreExamen.pdf" class="dl-card-btn" download>↓ Descargar PDF Pre-examen</a>
+        <a href="docs/Informe_Examene.pdf" class="dl-card-btn" download>↓ Descargar PDF Examen</a>
+      </div>
+    </div>
+    <p style="margin-top:24px; font-size:.75rem; color:var(--muted); text-align:center;">📌 Los PDFs deben ubicarse en la carpeta <code>docs/</code> con los nombres mostrados. Ajusta las rutas según tu estructura real.</p>
+  </div>
+
+  <!-- Terminal de conclusiones -->
+  <div class="section-block reveal">
+    <div class="section-label">06_conclusiones</div>
+    <h2 class="section-title">Resultados y métricas</h2>
+    <div class="terminal">
+      <div class="term-header"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+      <div class="term-line"><span class="prompt">marina@web-hacking:~$</span> <span class="cmd">./summary_owasp.sh</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] IDOR + 6 variantes de Path Traversal resueltas (PortSwigger).</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] LFI y RFI explotados en máquinas reales (reverse shell, escaladas).</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] XSS: 6 niveles superados, comprensión DOM-based y robo de cookies.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] CSRF: bypass de Double Submit Cookie y SameSite=Lax.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] SQLi: UNION, boolean blind, time-based, automatización con SQLMap.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Pivoting con SSH SOCKS5 y proxychains en Badbyte y SHOP.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Máquinas completas: SHOP, Badbyte, pre-examen, examen 3.</span></div>
+      <div class="term-line"><span class="term-warn">[ MEJORA ] Implementar WAF y validación de entrada en todas las aplicaciones web.</span></div>
+      <div class="term-line"><span class="term-warn">[ MEJORA ] Revisión de código para evitar inclusiones de archivos remotas/locales.</span></div>
+      <div class="term-line"><span class="prompt">marina@web-hacking:~$</span> <span class="cmd">echo "OWASP Top 10 vulnerabilidades practicadas con éxito"</span></div>
+      <div class="term-line"><span class="term-success">OWASP Top 10 vulnerabilidades practicadas con éxito</span></div>
+      <div class="term-line"><span class="prompt">marina@web-hacking:~$ <span class="cursor-blink">▊</span></span></div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-box reveal">
+    <h2>¿Necesitas una auditoría de aplicaciones web?</h2>
+    <p>Este proyecto demuestra que domino las vulnerabilidades más comunes del OWASP Top 10, sé explotarlas manualmente y con herramientas como BurpSuite o SQLMap, y puedo realizar pruebas de penetración en aplicaciones web. Contacta conmigo para auditar la seguridad de tus desarrollos web.</p>
+    <div class="cta-actions">
+      <a href="portfolio_marina.html#contact" class="btn-primary">→ Contactar</a>
+      <a href="portfolio_marina.html#portfolio" class="btn-outline">← Volver al portfolio</a>
+    </div>
+  </div>
+
+</div>
+
+<footer>MARINA DEL PILAR LÓPEZ OLIVA // HACKING DE APLICACIONES WEB // 2026</footer>
+
+<script>
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

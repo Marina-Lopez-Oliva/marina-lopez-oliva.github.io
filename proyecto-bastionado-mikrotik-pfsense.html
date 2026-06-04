@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bastionado MikroTik + pfSense | Marina del Pilar López Oliva</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Fira+Code:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#06080c;--surface:#0e1117;--card:#131821;
+  --accent:#00e5a0; --accent2:#a259ff; --gold:#ffd166;
+  --red:#ff6b6b; --fire:#ff9a3c;
+  --text:#eef0f5; --muted:#6b7280; --border:#1e2530;
+  --mono:'Fira Code',monospace; --display:'Syne',sans-serif; --body:'DM Sans',sans-serif;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--body);overflow-x:hidden;line-height:1.6;}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--accent);border-radius:2px;}
+
+nav{position:fixed;top:0;width:100%;z-index:100;background:rgba(6,8,12,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 6%;}
+.nav-inner{display:flex;justify-content:space-between;align-items:center;}
+.nav-logo{font-family:var(--mono);color:var(--accent);font-size:.85rem;letter-spacing:2px;text-decoration:none;}
+.nav-back{font-family:var(--mono);font-size:.7rem;color:var(--muted);text-decoration:none;letter-spacing:1px;transition:.2s;display:flex;align-items:center;gap:8px;}
+.nav-back:hover{color:var(--accent);}
+
+.proj-hero{min-height:55vh;display:flex;flex-direction:column;justify-content:flex-end;padding:120px 6% 60px;position:relative;overflow:hidden;}
+.proj-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 30% 50%,rgba(0,229,160,.06),transparent);}
+.proj-hero::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 50% 40% at 80% 50%,rgba(162,89,255,.04),transparent);}
+.hero-content{position:relative;z-index:1;max-width:1200px;margin:0 auto;width:100%;}
+.proj-badge{font-family:var(--mono);font-size:.65rem;color:var(--accent);border:1px solid rgba(0,229,160,.3);padding:5px 14px;border-radius:2px;letter-spacing:2px;display:inline-block;margin-bottom:20px;background:rgba(0,229,160,.06);}
+.proj-hero h1{font-family:var(--display);font-size:clamp(2.2rem,6vw,5rem);font-weight:800;letter-spacing:-2px;line-height:.95;margin-bottom:20px;}
+.proj-hero h1 span{color:var(--accent);}
+.proj-meta{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:32px;}
+.meta-item{font-family:var(--mono);font-size:.7rem;color:var(--muted);letter-spacing:1px;display:flex;align-items:center;gap:6px;}
+.meta-item span{color:var(--text);}
+.hero-tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:40px;}
+.tag{font-family:var(--mono);font-size:.6rem;color:var(--accent);border:1px solid rgba(0,229,160,.25);padding:4px 10px;border-radius:2px;letter-spacing:1px;}
+.tag.purple{color:var(--accent2);border-color:rgba(162,89,255,.25);}
+.tag.gold{color:var(--gold);border-color:rgba(255,209,102,.25);}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#000;font-family:var(--mono);font-size:.78rem;font-weight:600;padding:12px 28px;border-radius:3px;text-decoration:none;letter-spacing:1px;transition:.2s;}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,229,160,.25);}
+.btn-outline{display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--text);font-family:var(--mono);font-size:.78rem;padding:12px 28px;border-radius:3px;text-decoration:none;letter-spacing:1px;border:1px solid var(--border);transition:.2s;}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent);}
+
+.divider{height:1px;background:var(--border);}
+.content{max-width:1200px;margin:0 auto;padding:70px 6%;}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:70px;}
+.summary-card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:24px;position:relative;overflow:hidden;}
+.summary-card::before{content:'';position:absolute;bottom:0;left:0;width:100%;height:2px;background:var(--accent);}
+.summary-card.gold::before{background:var(--gold);}
+.summary-card.purple::before{background:var(--accent2);}
+.summary-label{font-family:var(--mono);font-size:.6rem;color:var(--muted);letter-spacing:2px;margin-bottom:10px;}
+.summary-value{font-family:var(--display);font-size:1.4rem;font-weight:800;color:var(--text);}
+.summary-sub{font-size:.8rem;color:var(--muted);margin-top:4px;}
+
+.section-block{margin-bottom:60px;}
+.section-label{font-family:var(--mono);color:var(--accent);font-size:.7rem;letter-spacing:4px;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.section-title{font-family:var(--display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;margin-bottom:20px;}
+.prose{color:var(--muted);font-size:.97rem;line-height:1.9;}
+.prose strong{color:var(--text);}
+.prose p{margin-bottom:14px;}
+
+.arch-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px;}
+.arch-block{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px 24px;}
+.arch-block h4{font-family:var(--mono);font-size:.72rem;color:var(--accent);letter-spacing:2px;margin-bottom:12px;}
+.arch-block ul{list-style:none;display:flex;flex-direction:column;gap:8px;}
+.arch-block ul li{font-size:.85rem;color:var(--muted);display:flex;align-items:flex-start;gap:10px;line-height:1.5;}
+.arch-block ul li::before{content:'›';color:var(--accent);flex-shrink:0;margin-top:1px;}
+
+.phases{display:flex;flex-direction:column;gap:0;margin-top:24px;position:relative;}
+.phases::before{content:'';position:absolute;left:18px;top:0;bottom:0;width:1px;background:var(--border);}
+.phase{display:flex;gap:28px;padding-bottom:32px;position:relative;}
+.phase-dot{width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.65rem;color:var(--accent);flex-shrink:0;position:relative;z-index:1;}
+.phase-body{flex:1;padding-top:6px;}
+.phase-body h4{font-family:var(--display);font-size:1rem;font-weight:700;margin-bottom:6px;}
+.phase-body p{font-size:.85rem;color:var(--muted);line-height:1.7;}
+.phase-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.phase-tag{font-family:var(--mono);font-size:.58rem;color:var(--muted);border:1px solid var(--border);padding:2px 7px;border-radius:2px;}
+
+.problem-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px;}
+.problem-card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px;}
+.problem-card h4{font-family:var(--mono);font-size:.68rem;color:rgba(255,80,80,.8);letter-spacing:1px;margin-bottom:8px;}
+.problem-card p{font-size:.83rem;color:var(--muted);line-height:1.6;}
+.solution-card{background:var(--card);border:1px solid rgba(0,229,160,.15);border-radius:6px;padding:20px;}
+.solution-card h4{font-family:var(--mono);font-size:.68rem;color:var(--accent);letter-spacing:1px;margin-bottom:8px;}
+.solution-card p{font-size:.83rem;color:var(--muted);line-height:1.6;}
+
+.tech-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:24px;}
+.tech-item{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:14px;text-align:center;}
+.tech-item .tech-name{font-family:var(--mono);font-size:.72rem;color:var(--text);display:block;margin-top:6px;}
+.tech-item .tech-role{font-family:var(--mono);font-size:.58rem;color:var(--muted);display:block;margin-top:3px;}
+
+.downloads-section{background:var(--card);border:1px solid rgba(0,229,160,.2);border-radius:8px;padding:40px;margin-top:70px;}
+.downloads-section h2{font-family:var(--display);font-size:clamp(1.4rem,3vw,2rem);font-weight:800;letter-spacing:-1px;margin-bottom:8px;}
+.downloads-section p{color:var(--muted);font-size:.9rem;margin-bottom:32px;max-width:500px;}
+.dl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+.dl-card{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:10px;transition:.2s;}
+.dl-card:hover{border-color:rgba(0,229,160,.3);}
+.dl-card-icon{font-size:1.6rem;}
+.dl-card-title{font-family:var(--display);font-size:.95rem;font-weight:700;}
+.dl-card-desc{font-size:.78rem;color:var(--muted);line-height:1.5;flex:1;}
+.dl-card-btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:.65rem;color:var(--accent);text-decoration:none;letter-spacing:1px;padding:7px 12px;border:1px solid rgba(0,229,160,.3);border-radius:2px;transition:.2s;width:fit-content;}
+.dl-card-btn:hover{background:rgba(0,229,160,.08);}
+
+.terminal{background:#080c10;border:1px solid var(--border);border-radius:6px;padding:20px 24px;font-family:var(--mono);font-size:.8rem;line-height:2;margin-top:24px;}
+.term-header{display:flex;gap:6px;margin-bottom:16px;}
+.dot{width:10px;height:10px;border-radius:50%;}
+.dot-r{background:#ff5f57;}.dot-y{background:#febc2e;}.dot-g{background:#28c840;}
+.term-line{color:var(--muted);}
+.term-line .prompt{color:var(--accent);}
+.term-line .cmd{color:var(--text);}
+.term-line .out{color:#6b8fa3;}
+.term-success{color:var(--accent);font-weight:bold;}
+.term-warn{color:var(--gold);}
+.cursor-blink{animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+
+.cta-box{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:48px;text-align:center;margin-top:70px;position:relative;overflow:hidden;}
+.cta-box::before{content:'';position:absolute;top:-50%;left:50%;transform:translateX(-50%);width:400px;height:400px;background:radial-gradient(circle,rgba(0,229,160,.04),transparent 70%);}
+.cta-box h2{font-family:var(--display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;margin-bottom:12px;}
+.cta-box p{color:var(--muted);font-size:.93rem;max-width:480px;margin:0 auto 28px;}
+.cta-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+
+footer{text-align:center;padding:32px;color:var(--muted);font-family:var(--mono);font-size:.65rem;letter-spacing:2px;border-top:1px solid var(--border);margin-top:0;}
+
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+
+@media(max-width:900px){
+  .summary-grid{grid-template-columns:1fr 1fr;}
+  .arch-grid{grid-template-columns:1fr;}
+  .problem-grid{grid-template-columns:1fr;}
+  .proj-hero h1{font-size:2.2rem;}
+  .cta-box{padding:36px 24px;}
+}
+@media(max-width:600px){
+  .summary-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="portfolio_marina.html" class="nav-logo">MPLO://sec</a>
+    <a href="portfolio_marina.html#portfolio" class="nav-back">← Volver al portfolio</a>
+  </div>
+</nav>
+
+<section class="proj-hero">
+  <div class="hero-content">
+    <span class="proj-badge">PROYECTO INTEGRADOR · 8 PRÁCTICAS</span>
+    <h1>Bastionado de<br>infraestructura de red <span>MikroTik + pfSense</span></h1>
+    <div class="proj-meta">
+      <div class="meta-item">ÁMBITO: <span>Perímetro · Segmentación · Fortificación</span></div>
+      <div class="meta-item">FIREWALLS: <span>pfSense (frontend) · MikroTik (backend)</span></div>
+      <div class="meta-item">AÑO: <span>2026</span></div>
+      <div class="meta-item">ENTORNO: <span>GNS3 + hardware virtualizado</span></div>
+    </div>
+    <div class="hero-tags">
+      <span class="tag">Doble firewall</span>
+      <span class="tag">VLANs + DMZ</span>
+      <span class="tag">WireGuard VPN</span>
+      <span class="tag">The Dude + Telegram</span>
+      <span class="tag purple">CIS Controls · NIST</span>
+      <span class="tag">Mitigación DoS/SYN</span>
+      <span class="tag">Port Security</span>
+    </div>
+    <div class="hero-actions">
+      <a href="#downloads" class="btn-primary">↓ Descargar todas las memorias</a>
+      <a href="portfolio_marina.html#portfolio" class="btn-outline">← Ver más proyectos</a>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<div class="content">
+
+  <!-- Resumen rápido -->
+  <div class="summary-grid reveal">
+    <div class="summary-card">
+      <div class="summary-label">PRÁCTICAS AGRUPADAS</div>
+      <div class="summary-value">8</div>
+      <div class="summary-sub">Desde subnetting VLSM hasta VPN cooperativa</div>
+    </div>
+    <div class="summary-card gold">
+      <div class="summary-label">FIREWALLS</div>
+      <div class="summary-value">2</div>
+      <div class="summary-sub">pfSense frontend + MikroTik backend</div>
+    </div>
+    <div class="summary-card purple">
+      <div class="summary-label">VLANs + REDES</div>
+      <div class="summary-value">3+</div>
+      <div class="summary-sub">DMZ · IT · Gestión · CCTV</div>
+    </div>
+  </div>
+
+  <!-- Contexto -->
+  <div class="section-block reveal">
+    <div class="section-label">01_contexto</div>
+    <h2 class="section-title">Defensa en profundidad para el IES Camp de Morvedre</h2>
+    <div class="prose">
+      <p>El conjunto de prácticas documenta el <strong>diseño, implementación y fortificación</strong> de una red perimetral segura para un centro educativo, utilizando una arquitectura de <strong>doble firewall (Back‑to‑Back)</strong>: pfSense como frontend (frontera externa) y MikroTik RouterOS como backend (seguridad interna). Se ha aplicado segmentación física y lógica (VLANs), aislamiento de la DMZ, despliegue de servicios web seguros, monitorización proactiva con The Dude + Telegram, mitigación de ataques MiTM (ARP Poisoning, MAC Flooding) y defensa contra DoS/SYN Flood, culminando en una <strong>VPN site‑to‑site con WireGuard</strong> para conectar sedes remotas bajo el principio de mínimo privilegio.</p>
+      <p>Todas las prácticas fueron validadas en <strong>GNS3</strong> con equipos virtuales (pfSense, MikroTik CHR, switches Cisco, Ubuntu Server, Kali Linux) y posteriormente documentadas siguiendo estándares como CIS Controls v7.1 y NIST SP 800-53.</p>
+    </div>
+  </div>
+
+  <!-- Arquitectura -->
+  <div class="section-block reveal">
+    <div class="section-label">02_arquitectura</div>
+    <h2 class="section-title">Topología de doble firewall y segmentación</h2>
+    <div class="arch-grid">
+      <div class="arch-block">
+        <h4>FRONTEND (pfSense)</h4>
+        <ul>
+          <li>Interfaz WAN (conexión a internet simulada)</li>
+          <li>Interfaz DMZ (red 192.168.1.0/24) – servidor web y backend</li>
+          <li>Reglas NAT + Port Forwarding (HTTP/HTTPS/SSH)</li>
+          <li>Bloqueo de tráfico saliente desde DMZ (solo DNS/NTP permitido)</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>BACKEND (MikroTik)</h4>
+        <ul>
+          <li>VLAN 10 · Administración (192.168.30.0/24)</li>
+          <li>VLAN 11 · Alumnado (192.168.31.0/24)</li>
+          <li>VLAN 99 · Gestión (192.168.100.0/28) – administración de switches</li>
+          <li>Trunk hacia switches Cisco con VLANs departamentales</li>
+          <li>Reglas firewall INPUT/FORWARD con default drop</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>DMZ Y SERVIDORES</h4>
+        <ul>
+          <li>Ubuntu Server (web corporativa + SFTP) en 192.168.10.10</li>
+          <li>Acceso web desde IT permitido; SSH solo desde IP de administrador</li>
+          <li>NAT con redirección de puertos desde WAN de pfSense</li>
+          <li>Bloqueo de conexiones iniciadas desde DMZ hacia IT</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>VLAN DE GESTIÓN Y MONITORIZACIÓN</h4>
+        <ul>
+          <li>Bridge en pfSense para extender VLAN 99 a ambas redes (DMZ e IT)</li>
+          <li>The Dude (servidor en MikroTik, cliente con Wine en Linux)</li>
+          <li>Alertas a Telegram por CPU &gt;50% y pérdida de conectividad</li>
+          <li>SNMPv3 para monitorización de servidor web</li>
+        </ul>
+      </div>
+    </div>
+    <!-- Aquí puedes insertar una imagen de la topología GNS3 -->
+    <!-- <div style="margin-top:20px; text-align:center;"><img src="media/topologia-bastionado.png" alt="Esquema de red GNS3" style="max-width:100%; border-radius:8px; border:1px solid var(--border);"></div> -->
+  </div>
+
+  <!-- Fases de implementación (agrupa las 8 prácticas) -->
+  <div class="section-block reveal">
+    <div class="section-label">03_implementación</div>
+    <h2 class="section-title">Fases del proyecto integrador</h2>
+    <div class="phases">
+      <div class="phase">
+        <div class="phase-dot">01</div>
+        <div class="phase-body">
+          <h4>Diseño de direccionamiento VLSM</h4>
+          <p>Subnetting con máscaras de longitud variable para optimizar el uso de IPs en departamentos (profesorado, alumnado, dirección, secretaría, CCTV). Cálculo de subredes, gateways y rangos disponibles. Implementación en GNS3 con VPCs.</p>
+          <div class="phase-tags"><span class="phase-tag">VLSM</span><span class="phase-tag">Excel</span><span class="phase-tag">GNS3</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">02</div>
+        <div class="phase-body">
+          <h4>Firewall perimetral con pfSense</h4>
+          <p>Instalación y configuración de pfSense como primer nivel de defensa. Segmentación física WAN/DMZ/IT, servidor DHCP en red IT, creación de VLANs (10,20,99) y bridge para red de gestión. Reglas de firewall y NAT con port forwarding hacia el servidor web.</p>
+          <div class="phase-tags"><span class="phase-tag">pfSense</span><span class="phase-tag">DMZ</span><span class="phase-tag">NAT</span><span class="phase-tag">VLANs</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">03</div>
+        <div class="phase-body">
+          <h4>Doble firewall: pfSense frontend + MikroTik backend</h4>
+          <p>Arquitectura Back‑to‑Back: pfSense como frontera externa y MikroTik como cortafuegos interno. Segmentación de red IT (VLAN 20) y gestión (VLAN 99). Reglas de filtrado para permitir solo web desde IT y SSH solo al administrador.</p>
+          <div class="phase-tags"><span class="phase-tag">Back-to-Back</span><span class="phase-tag">MikroTik</span><span class="phase-tag">pfSense</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">04</div>
+        <div class="phase-body">
+          <h4>Fortificación del backend (MikroTik)</h4>
+          <p>Aplicación de CIS Controls v7.1 (controles 9,11,12,14) y NIST SP 800-53 (AC-4, CA-3, SC-7). Deshabilitación de servicios innecesarios, cambio de puerto Winbox, creación de usuario administrador, certificados digitales propios, reglas de firewall INPUT/FORWARD con default drop, y listas de direcciones para VLANs de administración y alumnado.</p>
+          <div class="phase-tags"><span class="phase-tag">CIS Controls</span><span class="phase-tag">NIST</span><span class="phase-tag">PKI</span><span class="phase-tag">Hardening</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">05</div>
+        <div class="phase-body">
+          <h4>Monitorización con The Dude + Telegram</h4>
+          <p>Instalación del servidor Dude en MikroTik y cliente en Linux (via Wine). Configuración de SNMPv3 en el servidor web. Probes para CPU &gt;50% y servicios HTTP/SSH/ping. Alertas automáticas a un grupo de Telegram. Visualización de ancho de banda en enlaces y gráficos históricos.</p>
+          <div class="phase-tags"><span class="phase-tag">The Dude</span><span class="phase-tag">SNMPv3</span><span class="phase-tag">Telegram Bot</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">06</div>
+        <div class="phase-body">
+          <h4>Mitigación de ataques en dominio Broadcast</h4>
+          <p>Simulación de ARP Poisoning (ettercap) y MAC Flooding (macof). Identificación en Wireshark. Aplicación de contramedidas: <code>switchport protected</code> para aislar puertos y <code>port-security</code> con límite de MACs para evitar desbordamiento de tabla CAM.</p>
+          <div class="phase-tags"><span class="phase-tag">ARP spoofing</span><span class="phase-tag">MAC flooding</span><span class="phase-tag">Port Security</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">07</div>
+        <div class="phase-body">
+          <h4>Protección contra DoS / SYN Flood</h4>
+          <p>Uso de <code>slowhttptest</code> y <code>hping3</code> desde Kali para saturar el servidor web. Mitigación con tabla RAW en MikroTik (limitación de paquetes, listas de atacantes/víctimas) y activación de <code>tcp-syncookies</code>. Verificación de servicio operativo durante el ataque.</p>
+          <div class="phase-tags"><span class="phase-tag">DDoS mitigation</span><span class="phase-tag">RAW table</span><span class="phase-tag">SYN cookies</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">08</div>
+        <div class="phase-body">
+          <h4>VPN site‑to‑site con WireGuard (cooperativo)</h4>
+          <p>Configuración del servidor WireGuard en la Sede Central y clientes en sedes remotas (Jaume I, Miralcamp, IES Camp, IES Caminas). Uso de puerto no estándar (11011), <code>allowed-address</code> restringido, rutas estáticas y enrutamiento selectivo (Mangle) para que solo la VLAN de administración acceda a los recursos centrales. Verificación de bloqueo a la VLAN de alumnado.</p>
+          <div class="phase-tags"><span class="phase-tag">WireGuard</span><span class="phase-tag">Mangle</span><span class="phase-tag">Rutas selectivas</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Problemas y soluciones (extraídos de las prácticas) -->
+  <div class="section-block reveal">
+    <div class="section-label">04_incidencias</div>
+    <h2 class="section-title">Problemas reales y soluciones aplicadas</h2>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <h4>PROBLEMA — ARP poisoning</h4>
+        <p>Desde Kali se envenena la tabla ARP del gateway y la víctima (VPCS) mediante ettercap, redirigiendo todo el tráfico.</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN</h4>
+        <p>Configuración de <code>switchport protected</code> en los puertos de acceso de los switches. Así se aíslan los puertos y el tráfico no puede ser interceptado por el atacante.</p>
+      </div>
+      <div class="problem-card">
+        <h4>PROBLEMA — MAC flooding</h4>
+        <p>La herramienta <code>macof</code> inunda la tabla CAM del switch con MACs falsas, forzando un comportamiento de hub y permitiendo sniffing.</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN</h4>
+        <p>Activación de <code>port-security</code> en la interfaz del atacante con límite de 2 MACs y violación shutdown. El switch deshabilita el puerto al superar el límite.</p>
+      </div>
+      <div class="problem-card">
+        <h4>PROBLEMA — Ataque DoS (Slow HTTP headers)</h4>
+        <p>El servidor web de la DMZ queda inaccesible (timeout) y el firewall MikroTik se satura, impidiendo incluso la administración.</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN</h4>
+        <p>Reglas en la tabla RAW: límite de 32 paquetes cada 10 segundos, adición automática de IPs atacantes a una lista de direcciones y bloqueo posterior de todo el tráfico entre atacante y víctima.</p>
+      </div>
+      <div class="problem-card">
+        <h4>PROBLEMA — SYN flood sin mitigación</h4>
+        <p>El servidor web deja de responder y la tabla de conexiones del router se llena de estados <code>syn-sent</code>.</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN</h4>
+        <p>Activación de <code>/ip settings set tcp-syncookies=yes</code> en MikroTik. El firewall ya no mantiene estado para medias conexiones, evitando la saturación.</p>
+      </div>
+      <div class="problem-card">
+        <h4>PROBLEMA — Acceso administrativo no autorizado</h4>
+        <p>Logs del MikroTik muestran intentos de login SSH desde IPs fuera de la VLAN de gestión (por ejemplo, desde el atacante Kali).</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN</h4>
+        <p>Reglas en cadena INPUT que solo permiten SSH y HTTPS desde la subred 192.168.100.0/28. Bloqueo explícito del resto. Además se deshabilitó el usuario <code>admin</code> por defecto.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stack tecnológico -->
+  <div class="section-block reveal">
+    <div class="section-label">05_tecnologías</div>
+    <h2 class="section-title">Stack utilizado en las prácticas</h2>
+    <div class="tech-grid">
+      <div class="tech-item"><span class="tech-name">pfSense</span><span class="tech-role">Firewall frontend</span></div>
+      <div class="tech-item"><span class="tech-name">MikroTik RouterOS</span><span class="tech-role">Firewall backend</span></div>
+      <div class="tech-item"><span class="tech-name">GNS3</span><span class="tech-role">Virtualización de red</span></div>
+      <div class="tech-item"><span class="tech-name">Cisco IOS</span><span class="tech-role">Switches de acceso</span></div>
+      <div class="tech-item"><span class="tech-name">WireGuard</span><span class="tech-role">VPN site‑to‑site</span></div>
+      <div class="tech-item"><span class="tech-name">The Dude</span><span class="tech-role">Monitorización</span></div>
+      <div class="tech-item"><span class="tech-name">SNMPv3</span><span class="tech-role">Métrica de servidores</span></div>
+      <div class="tech-item"><span class="tech-name">Telegram Bot API</span><span class="tech-role">Alertas</span></div>
+      <div class="tech-item"><span class="tech-name">Kali Linux</span><span class="tech-role">Pentesting (ettercap, macof, hping3)</span></div>
+      <div class="tech-item"><span class="tech-name">Wireshark</span><span class="tech-role">Análisis de tráfico</span></div>
+      <div class="tech-item"><span class="tech-name">Ubuntu Server</span><span class="tech-role">Web + SFTP</span></div>
+      <div class="tech-item"><span class="tech-name">CIS Controls / NIST</span><span class="tech-role">Estándares de hardening</span></div>
+    </div>
+  </div>
+
+  <!-- Bloque de descargas (8 PDFs) -->
+  <div class="downloads-section reveal" id="downloads">
+    <h2>📄 Memorias completas de las prácticas</h2>
+    <p>Cada práctica está documentada con su propio PDF, incluyendo capturas, configuraciones y análisis. Haz clic en cada tarjeta para descargar.</p>
+    <div class="dl-grid">
+      <div class="dl-card">
+        <div class="dl-card-icon">📐</div>
+        <div class="dl-card-title">Subnetting VLSM</div>
+        <div class="dl-card-desc">Diseño de direccionamiento con máscara variable, hoja de cálculo Excel y simulación en GNS3.</div>
+        <a href="docs/SubnettingVLSM.zip" class="dl-card-btn" download>↓ Descargar ZIP</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">🛡️</div>
+        <div class="dl-card-title">pfSense como firewall perimetral</div>
+        <div class="dl-card-desc">Segmentación física WAN/DMZ/IT, VLANs, bridge de gestión, NAT y port forwarding.</div>
+        <a href="docs/FirewallPerimetralpfSense.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">🔥</div>
+        <div class="dl-card-title">DMZ con doble firewall (pfSense + MikroTik)</div>
+        <div class="dl-card-desc">Arquitectura Back‑to‑Back, reglas de filtrado, aislamiento de la DMZ y acceso SSH restringido.</div>
+        <a href="docs/DMZ_DobleFirewallPerimteral_Mikrotik-pfSense.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">⚙️</div>
+        <div class="dl-card-title">Segmentación y fortificación de red</div>
+        <div class="dl-card-desc">VLANs con MikroTik/Cisco.</div>
+        <a href="docs/SegmentacionRedVLANS.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">📡</div>
+        <div class="dl-card-title">Fortificación Mikrotik y Monitorización con The Dude + Telegram</div>
+        <div class="dl-card-desc">Aplicación de controles CIS y NIST, certificados, hardening de servicios y reglas INPUT/FORWARD. Instalación, SNMPv3, probes de CPU y servicios, alertas a Telegram, gráficas de ancho de banda.</div>
+        <a href="docs/FortificacionMikrotik_MonitorizacionDude.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">⚠️</div>
+        <div class="dl-card-title">Mitigación ARP Poisoning y MAC Flooding</div>
+        <div class="dl-card-desc">Ataques con Ettercap y macof, análisis Wireshark, contramedidas <code>switchport protected</code> y <code>port-security</code>.</div>
+        <a href="docs/MitigarAtaquesDominioBroadcast.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">🔐</div>
+        <div class="dl-card-title">WireGuard VPN site‑to‑site (cooperativo)</div>
+        <div class="dl-card-desc">Servidor WireGuard en Sede Central, clientes en sedes remotas, enrutamiento selectivo con Mangle, mínimo privilegio.</div>
+        <a href="docs/Proyecto cooperativo. Implementación de una VPN para la interconexión de sedes.pdf" class="dl-card-btn" download>↓ Descargar PDF servidor</a>
+        <a href="docs/Implementación de una VPN para la interconexión de sedes - Individual.pdf" class="dl-card-btn" download>↓ Descargar PDF cliente</a>
+      </div>
+    </div>
+    <p style="margin-top:24px; font-size:.75rem; color:var(--muted); text-align:center;">📌 Los PDFs deben ubicarse en la carpeta <code>docs/</code> con los nombres mostrados. Ajusta las rutas según tu estructura real.</p>
+  </div>
+
+  <!-- Terminal de conclusiones -->
+  <div class="section-block reveal">
+    <div class="section-label">06_conclusiones</div>
+    <h2 class="section-title">Resultados y lecciones aprendidas</h2>
+    <div class="terminal">
+      <div class="term-header"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+      <div class="term-line"><span class="prompt">marina@bastionado:~$</span> <span class="cmd">./validate_defense_in_depth.sh</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Segmentación física y lógica (VLANs + DMZ) — tráfico entre departamentos bloqueado.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Doble firewall (pfSense + MikroTik) — defensa en profundidad operativa.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Ataques ARP Poisoning y MAC Flooding mitigados con switchport protected y port-security.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] DoS/SYN Flood neutralizados mediante tabla RAW y tcp-syncookies.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Monitorización proactiva con The Dude + Telegram (CPU &gt;50%, caída servicios).</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] VPN WireGuard site‑to‑site operativa, con enrutamiento selectivo (solo VLAN de administración).</span></div>
+      <div class="term-line"><span class="term-warn">[ MEJORA FUTURA ] Implementar IDS/IPS en la DMZ, automatizar backups de configuraciones.</span></div>
+      <div class="term-line"><span class="prompt">marina@bastionado:~$</span> <span class="cmd">echo "Infraestructura resiliente según CIS/NIST"</span></div>
+      <div class="term-line"><span class="term-success">Infraestructura resiliente según CIS/NIST</span></div>
+      <div class="term-line"><span class="prompt">marina@bastionado:~$ <span class="cursor-blink">▊</span></span></div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-box reveal">
+    <h2>¿Necesitas una red perimetral fortificada?</h2>
+    <p>Estas prácticas demuestran que domino el diseño, implementación y hardening de infraestructuras con pfSense, MikroTik y soluciones de monitorización/VPN. Contacta conmigo para aplicar este conocimiento a tu organización.</p>
+    <div class="cta-actions">
+      <a href="portfolio_marina.html#contact" class="btn-primary">→ Contactar</a>
+      <a href="portfolio_marina.html#portfolio" class="btn-outline">← Volver al portfolio</a>
+    </div>
+  </div>
+
+</div>
+
+<footer>MARINA DEL PILAR LÓPEZ OLIVA // BASTIONADO DE INFRAESTRUCTURA MIKROTIK + PFSENSE // 2026</footer>
+
+<script>
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

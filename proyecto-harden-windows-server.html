@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hardening Windows Server 2025 · Parches, servicios, cifrado y arranque seguro | Marina del Pilar López Oliva</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Fira+Code:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#06080c;--surface:#0e1117;--card:#131821;
+  --accent:#00e5a0; --accent2:#a259ff; --gold:#ffd166;
+  --red:#ff6b6b; --fire:#ff9a3c;
+  --text:#eef0f5; --muted:#6b7280; --border:#1e2530;
+  --mono:'Fira Code',monospace; --display:'Syne',sans-serif; --body:'DM Sans',sans-serif;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--body);overflow-x:hidden;line-height:1.6;}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--accent);border-radius:2px;}
+
+nav{position:fixed;top:0;width:100%;z-index:100;background:rgba(6,8,12,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 6%;}
+.nav-inner{display:flex;justify-content:space-between;align-items:center;}
+.nav-logo{font-family:var(--mono);color:var(--accent);font-size:.85rem;letter-spacing:2px;text-decoration:none;}
+.nav-back{font-family:var(--mono);font-size:.7rem;color:var(--muted);text-decoration:none;letter-spacing:1px;transition:.2s;display:flex;align-items:center;gap:8px;}
+.nav-back:hover{color:var(--accent);}
+
+.proj-hero{min-height:55vh;display:flex;flex-direction:column;justify-content:flex-end;padding:120px 6% 60px;position:relative;overflow:hidden;}
+.proj-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 30% 50%,rgba(0,229,160,.06),transparent);}
+.proj-hero::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 50% 40% at 80% 50%,rgba(162,89,255,.04),transparent);}
+.hero-content{position:relative;z-index:1;max-width:1200px;margin:0 auto;width:100%;}
+.proj-badge{font-family:var(--mono);font-size:.65rem;color:var(--accent);border:1px solid rgba(0,229,160,.3);padding:5px 14px;border-radius:2px;letter-spacing:2px;display:inline-block;margin-bottom:20px;background:rgba(0,229,160,.06);}
+.proj-hero h1{font-family:var(--display);font-size:clamp(2.2rem,6vw,5rem);font-weight:800;letter-spacing:-2px;line-height:.95;margin-bottom:20px;}
+.proj-hero h1 span{color:var(--accent);}
+.proj-meta{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:32px;}
+.meta-item{font-family:var(--mono);font-size:.7rem;color:var(--muted);letter-spacing:1px;display:flex;align-items:center;gap:6px;}
+.meta-item span{color:var(--text);}
+.hero-tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:40px;}
+.tag{font-family:var(--mono);font-size:.6rem;color:var(--accent);border:1px solid rgba(0,229,160,.25);padding:4px 10px;border-radius:2px;letter-spacing:1px;}
+.tag.purple{color:var(--accent2);border-color:rgba(162,89,255,.25);}
+.tag.gold{color:var(--gold);border-color:rgba(255,209,102,.25);}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#000;font-family:var(--mono);font-size:.78rem;font-weight:600;padding:12px 28px;border-radius:3px;text-decoration:none;letter-spacing:1px;transition:.2s;}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,229,160,.25);}
+.btn-outline{display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--text);font-family:var(--mono);font-size:.78rem;padding:12px 28px;border-radius:3px;text-decoration:none;letter-spacing:1px;border:1px solid var(--border);transition:.2s;}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent);}
+
+.divider{height:1px;background:var(--border);}
+.content{max-width:1200px;margin:0 auto;padding:70px 6%;}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:70px;}
+.summary-card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:24px;position:relative;overflow:hidden;}
+.summary-card::before{content:'';position:absolute;bottom:0;left:0;width:100%;height:2px;background:var(--accent);}
+.summary-card.gold::before{background:var(--gold);}
+.summary-card.purple::before{background:var(--accent2);}
+.summary-label{font-family:var(--mono);font-size:.6rem;color:var(--muted);letter-spacing:2px;margin-bottom:10px;}
+.summary-value{font-family:var(--display);font-size:1.4rem;font-weight:800;color:var(--text);}
+.summary-sub{font-size:.8rem;color:var(--muted);margin-top:4px;}
+
+.section-block{margin-bottom:60px;}
+.section-label{font-family:var(--mono);color:var(--accent);font-size:.7rem;letter-spacing:4px;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.section-title{font-family:var(--display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;margin-bottom:20px;}
+.prose{color:var(--muted);font-size:.97rem;line-height:1.9;}
+.prose strong{color:var(--text);}
+.prose p{margin-bottom:14px;}
+
+.arch-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px;}
+.arch-block{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px 24px;}
+.arch-block h4{font-family:var(--mono);font-size:.72rem;color:var(--accent);letter-spacing:2px;margin-bottom:12px;}
+.arch-block ul{list-style:none;display:flex;flex-direction:column;gap:8px;}
+.arch-block ul li{font-size:.85rem;color:var(--muted);display:flex;align-items:flex-start;gap:10px;line-height:1.5;}
+.arch-block ul li::before{content:'›';color:var(--accent);flex-shrink:0;margin-top:1px;}
+
+.phases{display:flex;flex-direction:column;gap:0;margin-top:24px;position:relative;}
+.phases::before{content:'';position:absolute;left:18px;top:0;bottom:0;width:1px;background:var(--border);}
+.phase{display:flex;gap:28px;padding-bottom:32px;position:relative;}
+.phase-dot{width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.65rem;color:var(--accent);flex-shrink:0;position:relative;z-index:1;}
+.phase-body{flex:1;padding-top:6px;}
+.phase-body h4{font-family:var(--display);font-size:1rem;font-weight:700;margin-bottom:6px;}
+.phase-body p{font-size:.85rem;color:var(--muted);line-height:1.7;}
+.phase-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.phase-tag{font-family:var(--mono);font-size:.58rem;color:var(--muted);border:1px solid var(--border);padding:2px 7px;border-radius:2px;}
+
+.problem-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px;}
+.problem-card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px;}
+.problem-card h4{font-family:var(--mono);font-size:.68rem;color:rgba(255,80,80,.8);letter-spacing:1px;margin-bottom:8px;}
+.problem-card p{font-size:.83rem;color:var(--muted);line-height:1.6;}
+.solution-card{background:var(--card);border:1px solid rgba(0,229,160,.15);border-radius:6px;padding:20px;}
+.solution-card h4{font-family:var(--mono);font-size:.68rem;color:var(--accent);letter-spacing:1px;margin-bottom:8px;}
+.solution-card p{font-size:.83rem;color:var(--muted);line-height:1.6;}
+
+.tech-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:24px;}
+.tech-item{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:14px;text-align:center;}
+.tech-item .tech-name{font-family:var(--mono);font-size:.72rem;color:var(--text);display:block;margin-top:6px;}
+.tech-item .tech-role{font-family:var(--mono);font-size:.58rem;color:var(--muted);display:block;margin-top:3px;}
+
+.downloads-section{background:var(--card);border:1px solid rgba(0,229,160,.2);border-radius:8px;padding:40px;margin-top:70px;}
+.downloads-section h2{font-family:var(--display);font-size:clamp(1.4rem,3vw,2rem);font-weight:800;letter-spacing:-1px;margin-bottom:8px;}
+.downloads-section p{color:var(--muted);font-size:.9rem;margin-bottom:32px;max-width:500px;}
+.dl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+.dl-card{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:10px;transition:.2s;}
+.dl-card:hover{border-color:rgba(0,229,160,.3);}
+.dl-card-icon{font-size:1.6rem;}
+.dl-card-title{font-family:var(--display);font-size:.95rem;font-weight:700;}
+.dl-card-desc{font-size:.78rem;color:var(--muted);line-height:1.5;flex:1;}
+.dl-card-btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:.65rem;color:var(--accent);text-decoration:none;letter-spacing:1px;padding:7px 12px;border:1px solid rgba(0,229,160,.3);border-radius:2px;transition:.2s;width:fit-content;}
+.dl-card-btn:hover{background:rgba(0,229,160,.08);}
+
+.terminal{background:#080c10;border:1px solid var(--border);border-radius:6px;padding:20px 24px;font-family:var(--mono);font-size:.8rem;line-height:2;margin-top:24px;}
+.term-header{display:flex;gap:6px;margin-bottom:16px;}
+.dot{width:10px;height:10px;border-radius:50%;}
+.dot-r{background:#ff5f57;}.dot-y{background:#febc2e;}.dot-g{background:#28c840;}
+.term-line{color:var(--muted);}
+.term-line .prompt{color:var(--accent);}
+.term-line .cmd{color:var(--text);}
+.term-line .out{color:#6b8fa3;}
+.term-success{color:var(--accent);font-weight:bold;}
+.term-warn{color:var(--gold);}
+.cursor-blink{animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+
+.cta-box{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:48px;text-align:center;margin-top:70px;position:relative;overflow:hidden;}
+.cta-box::before{content:'';position:absolute;top:-50%;left:50%;transform:translateX(-50%);width:400px;height:400px;background:radial-gradient(circle,rgba(0,229,160,.04),transparent 70%);}
+.cta-box h2{font-family:var(--display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;margin-bottom:12px;}
+.cta-box p{color:var(--muted);font-size:.93rem;max-width:480px;margin:0 auto 28px;}
+.cta-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+
+footer{text-align:center;padding:32px;color:var(--muted);font-family:var(--mono);font-size:.65rem;letter-spacing:2px;border-top:1px solid var(--border);margin-top:0;}
+
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+
+@media(max-width:900px){
+  .summary-grid{grid-template-columns:1fr 1fr;}
+  .arch-grid{grid-template-columns:1fr;}
+  .problem-grid{grid-template-columns:1fr;}
+  .proj-hero h1{font-size:2.2rem;}
+  .cta-box{padding:36px 24px;}
+}
+@media(max-width:600px){
+  .summary-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="portfolio_marina.html" class="nav-logo">MPLO://sec</a>
+    <a href="portfolio_marina.html#portfolio" class="nav-back">← Volver al portfolio</a>
+  </div>
+</nav>
+
+<section class="proj-hero">
+  <div class="hero-content">
+    <span class="proj-badge">PROYECTO INTEGRADOR · 8 PRÁCTICAS</span>
+    <h1>Hardening de Windows Server 2025<br><span>Parches, servicios, cifrado y arranque seguro</span></h1>
+    <div class="proj-meta">
+      <div class="meta-item">SISTEMA: <span>Windows Server 2025 Datacenter (controlador de dominio)</span></div>
+      <div class="meta-item">HERRAMIENTAS: <span>Security Compliance Toolkit · WSUS · BitLocker · EFS</span></div>
+      <div class="meta-item">BIOS/UEFI: <span>TPM 2.0 · Secure Boot · Credential Guard</span></div>
+      <div class="meta-item">AÑO: <span>2025-2026</span></div>
+    </div>
+    <div class="hero-tags">
+      <span class="tag">CVE y parches</span>
+      <span class="tag">Líneas base CIS</span>
+      <span class="tag">Hardening de servicios</span>
+      <span class="tag purple">BitLocker + EFS</span>
+      <span class="tag">Arranque seguro (ELAM)</span>
+      <span class="tag gold">Credential Guard</span>
+      <span class="tag">WSUS</span>
+    </div>
+    <div class="hero-actions">
+      <a href="#downloads" class="btn-primary">↓ Descargar memorias</a>
+      <a href="portfolio_marina.html#portfolio" class="btn-outline">← Ver más proyectos</a>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<div class="content">
+
+  <!-- Resumen rápido -->
+  <div class="summary-grid reveal">
+    <div class="summary-card">
+      <div class="summary-label">PRÁCTICAS AGRUPADAS</div>
+      <div class="summary-value">8</div>
+      <div class="summary-sub">Actualizaciones · Servicios · Cifrado · Arranque · BIOS</div>
+    </div>
+    <div class="summary-card gold">
+      <div class="summary-label">GESTIÓN DE PARCHES</div>
+      <div class="summary-value">WSUS</div>
+      <div class="summary-sub">Centralización de actualizaciones · Ahorro de ancho de banda</div>
+    </div>
+    <div class="summary-card purple">
+      <div class="summary-label">CIFRADO</div>
+      <div class="summary-value">BitLocker + EFS</div>
+      <div class="summary-sub">Discos completos · Archivos selectivos · Certificados</div>
+    </div>
+  </div>
+
+  <!-- Contexto -->
+  <div class="section-block reveal">
+    <div class="section-label">01_contexto</div>
+    <h2 class="section-title">Fortificación integral del controlador de dominio</h2>
+    <div class="prose">
+      <p>El proyecto agrupa todas las prácticas de hardening realizadas sobre <strong>Windows Server 2025 Datacenter</strong> en su rol de controlador de dominio para el IES Camp de Morvedre. El objetivo ha sido reducir la superficie de ataque, garantizar la confidencialidad de los datos mediante cifrado, centralizar la gestión de actualizaciones y asegurar el proceso de arranque desde la BIOS/UEFI hasta el sistema operativo.</p>
+      <p>Se han aplicado líneas base de seguridad de Microsoft (Security Compliance Toolkit), deshabilitado servicios innecesarios, configurado el firewall de host, implementado BitLocker y EFS, y fortalecido el arranque con Secure Boot, ELAM, Credential Guard y UAC. Además, se ha realizado un análisis de vulnerabilidades (CVE) y se ha desplegado WSUS para la gestión centralizada de parches.</p>
+    </div>
+  </div>
+
+  <!-- Arquitectura del hardening -->
+  <div class="section-block reveal">
+    <div class="section-label">02_arquitectura</div>
+    <h2 class="section-title">Capas de seguridad aplicadas</h2>
+    <div class="arch-grid">
+      <div class="arch-block">
+        <h4>FIRMWARE Y ARRANQUE (BIOS/UEFI)</h4>
+        <ul>
+          <li>Contraseña de administrador y de sistema (BIOS)</li>
+          <li>Deshabilitado Legacy Boot y activado UEFI puro</li>
+          <li>Secure Boot activado con claves PK/KEK/db/dbx</li>
+          <li>TPM 2.0 habilitado y configurado (sin bypass físico)</li>
+          <li>Chassis Intrusion activado (detección de apertura física)</li>
+          <li>Deshabilitado Wake on LAN, puertos USB no necesarios y NIC remota</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>SISTEMA OPERATIVO (WINDOWS SERVER)</h4>
+        <ul>
+          <li>Gestión de actualizaciones con WSUS (servidor interno)</li>
+          <li>Líneas base de seguridad importadas (Security Compliance Toolkit)</li>
+          <li>Deshabilitación de servicios innecesarios (AppReadiness, Audio, Bluetooth, etc.)</li>
+          <li>Firewall de host con reglas de entrada/salida para SSH, DNS, SNMP, HTTP/HTTPS</li>
+          <li>Políticas de contraseñas robustas (12 caracteres, complejidad, bloqueo tras 5 fallos)</li>
+          <li>Auditoría de inicios de sesión (EventID 4624/4625)</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>CIFRADO Y PROTECCIÓN DE DATOS</h4>
+        <ul>
+          <li>BitLocker en disco de datos (unidad F:) con XtsAes128 y UsedSpaceOnly</li>
+          <li>Copia de seguridad de la clave de recuperación (archivo y dispositivo externo)</li>
+          <li>EFS: cifrado de carpeta test_cifradoEFS y archivos personales</li>
+          <li>Exportación de certificado EFS antes de eliminar usuario</li>
+          <li>Comprobación de inaccesibilidad desde Ubuntu Live (disco cifrado)</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>SEGURIDAD AVANZADA (CREDENTIAL GUARD, UAC)</h4>
+        <ul>
+          <li>Credential Guard aislado por virtualización (evita Pass-the-Hash)</li>
+          <li>UAC configurado en nivel máximo (ConsentPromptBehaviorAdmin=2)</li>
+          <li>ELAM (Early Launch Anti-Malware) con DriverLoadPolicy=8</li>
+          <li>Verificación de firmas digitales de archivos de arranque (sigverif)</li>
+          <li>Arranque medido con TPM (documentado teóricamente)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fases de implementación (agrupa las 8 prácticas) -->
+  <div class="section-block reveal">
+    <div class="section-label">03_implementación</div>
+    <h2 class="section-title">Fases del proyecto de hardening</h2>
+    <div class="phases">
+      <div class="phase">
+        <div class="phase-dot">01</div>
+        <div class="phase-body">
+          <h4>Auditoría de actualizaciones y gestión de parches</h4>
+          <p>Análisis de vulnerabilidades de Windows Server 2025 mediante CVEDetails (CVE-2025-62221, CVE-2025-64678, etc.). Implementación de WSUS: instalación del rol, creación de grupo de equipos, GPO para redirigir clientes al servidor interno, sincronización de actualizaciones y verificación en cliente Windows 11.</p>
+          <div class="phase-tags"><span class="phase-tag">CVE</span><span class="phase-tag">WSUS</span><span class="phase-tag">GPO</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">02</div>
+        <div class="phase-body">
+          <h4>Reducción de servicios y firewall de host</h4>
+          <p>Listado de servicios activos con PowerShell, identificación de 40+ servicios innecesarios (AppReadiness, Audio, Bluetooth, RemoteRegistry, etc.). Deshabilitación con Set-Service -StartupType Disabled. Configuración de firewall: bloqueo de NetBIOS, cambio de puerto RDP (3389→8989), deshabilitación de ping, restricción de RDP a IP específica (192.168.13.3), reglas para SSH, DNS, SNMP, HTTP/HTTPS.</p>
+          <div class="phase-tags"><span class="phase-tag">PowerShell</span><span class="phase-tag">iptables</span><span class="phase-tag">RDP</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">03</div>
+        <div class="phase-body">
+          <h4>Líneas base de seguridad (Security Compliance Toolkit)</h4>
+          <p>Descarga de Microsoft Security Compliance Toolkit. Uso de Policy Analyzer para comparar configuraciones. Importación de la línea base "Windows Server 2025 - Domain Controller" mediante LGPO. Aplicación de GPOs a las OUs correspondientes (Equipos, Usuarios). Verificación con gpresult /r. Adaptación al contexto educativo (sin bloqueo de USB ni restricciones horarias extremas).</p>
+          <div class="phase-tags"><span class="phase-tag">LGPO</span><span class="phase-tag">Policy Analyzer</span><span class="phase-tag">GPO</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">04</div>
+        <div class="phase-body">
+          <h4>Configuración del sistema y arranque seguro</h4>
+          <p>Preparación de máquina virtual con UEFI y TPM 2.0. Configuración de arranque seguro mediante bcdedit: modo minimal, 2 procesadores, 4096 MB RAM, debug activado, timeout 10 segundos, sin GUI. Implementación de ELAM (Early Launch Anti-Malware) con DriverLoadPolicy=8. Verificación de firmas con sigverif. Configuración de Credential Guard y UAC avanzado.</p>
+          <div class="phase-tags"><span class="phase-tag">bcdedit</span><span class="phase-tag">ELAM</span><span class="phase-tag">Credential Guard</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">05</div>
+        <div class="phase-body">
+          <h4>Cifrado con BitLocker y EFS</h4>
+          <p>Cifrado rápido de disco F: con Enable-BitLocker -UsedSpaceOnly -EncryptionMethod XtsAes128. Adición de protector por contraseña y clave de recuperación. Verificación con Get-BitLockerVolume. Prueba de acceso desde Ubuntu Live (imposible). Cifrado EFS de carpeta test_cifradoEFS con usuario "cifrado". Exportación de certificado (PFX) antes de eliminar usuario. Importación del certificado y acceso exitoso a los archivos.</p>
+          <div class="phase-tags"><span class="phase-tag">BitLocker</span><span class="phase-tag">EFS</span><span class="phase-tag">certificado</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">06</div>
+        <div class="phase-body">
+          <h4>Auditoría y fortificación de BIOS/UEFI</h4>
+          <p>Identificación de características de seguridad en BIOS Optiplex 5070 (versión, Secure Boot, TPM, contraseñas, Legacy Boot, etc.). Propuesta de fortificación: contraseñas de admin y sistema, deshabilitado Legacy, activado Secure Boot con PK, TPM sin bypass, Chassis Intrusion, deshabilitado Wake on LAN y USB no esenciales, deshabilitado BIOS downgrade. Aplicación práctica de las medidas.</p>
+          <div class="phase-tags"><span class="phase-tag">BIOS</span><span class="phase-tag">UEFI</span><span class="phase-tag">TPM</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">07</div>
+        <div class="phase-body">
+          <h4>Particiones seguras y recuperación</h4>
+          <p>Análisis de particiones del sistema: EFI System Partition (100 MB FAT32) para arranque UEFI seguro, Windows Recovery Environment (687 MB NTFS) para restauración sin medios externos, y partición del sistema (49 GB NTFS) aislada. Verificación con diskpart y fstab. Medidas de seguridad aportadas por cada partición.</p>
+          <div class="phase-tags"><span class="phase-tag">diskpart</span><span class="phase-tag">recovery</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">08</div>
+        <div class="phase-body">
+          <h4>Políticas de contraseñas y auditoría</h4>
+          <p>Configuración de políticas de contraseñas en Active Directory: longitud mínima 12 caracteres, historial 24, caducidad 90 días, bloqueo tras 5 intentos fallidos (60 minutos). Activación de auditoría de inicios de sesión para eventos 4624 (éxito) y 4625 (fallo). Verificación de bloqueo de cuenta y visualización en visor de eventos.</p>
+          <div class="phase-tags"><span class="phase-tag">GPO</span><span class="phase-tag">auditoría</span><span class="phase-tag">EventID</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Problemas y soluciones reales -->
+  <div class="section-block reveal">
+    <div class="section-label">04_incidencias</div>
+    <h2 class="section-title">Hallazgos críticos y medidas correctivas</h2>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <h4>HALLAZGO — Ventana de exposición por parches no aplicados</h4>
+        <p>Las vulnerabilidades CVE-2025-62221 (CVSS 7.8, exploit conocido) y CVE-2025-64678 (CVSS 8.8) permanecían activas durante semanas antes de aplicar los parches de Microsoft.</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN</h4>
+        <p>Implementación de WSUS para automatizar la aprobación de parches críticos en menos de 48 horas. Establecimiento de una política de actualizaciones con ventana de mantenimiento semanal.</p>
+      </div>
+      <div class="problem-card">
+        <h4>HALLAZGO — Servicios innecesarios activos por defecto</h4>
+        <p>Más de 40 servicios inseguros o irrelevantes en ejecución (AppReadiness, RemoteRegistry, Audio, Bluetooth, etc.), ampliando la superficie de ataque.</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN</h4>
+        <p>Deshabilitación mediante PowerShell de todos los servicios no críticos para un controlador de dominio. Se redujo el número de servicios activos en más de un 30%.</p>
+      </div>
+      <div class="problem-card">
+        <h4>HALLAZGO — NetBIOS y SMB expuestos</h4>
+        <p>El protocolo NetBIOS estaba habilitado y el puerto RDP por defecto (3389) accesible, facilitando ataques de enumeración y fuerza bruta.</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN</h4>
+        <p>Deshabilitación de NetBIOS sobre TCP/IP, bloqueo de puertos SMB no necesarios, cambio de puerto RDP a 8989 y restricción por IP (solo 192.168.13.3).</p>
+      </div>
+      <div class="problem-card">
+        <h4>HALLAZGO — BIOS sin contraseña y con Legacy Boot activado</h4>
+        <p>Cualquier persona con acceso físico podía modificar la configuración de arranque, arrancar desde USB o deshabilitar Secure Boot.</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN</h4>
+        <p>Establecimiento de contraseña de administrador de BIOS, deshabilitado Legacy Boot, activado Secure Boot con claves PK, y deshabilitado el arranque desde dispositivos USB.</p>
+      </div>
+      <div class="problem-card">
+        <h4>HALLAZGO — Datos sin cifrar en discos extraíbles</h4>
+        <p>El disco de datos "Privado" (F:) no estaba cifrado, permitiendo el acceso a la información si se extraía físicamente.</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN</h4>
+        <p>Cifrado BitLocker con XtsAes128 y modo UsedSpaceOnly. Copia de seguridad de la clave de recuperación en archivo y dispositivo externo. Verificación de inaccesibilidad desde Ubuntu Live.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stack tecnológico -->
+  <div class="section-block reveal">
+    <div class="section-label">05_tecnologías</div>
+    <h2 class="section-title">Herramientas y plataformas utilizadas</h2>
+    <div class="tech-grid">
+      <div class="tech-item"><span class="tech-name">Windows Server 2025</span><span class="tech-role">Sistema base (controlador de dominio)</span></div>
+      <div class="tech-item"><span class="tech-name">Security Compliance Toolkit</span><span class="tech-role">Líneas base de seguridad</span></div>
+      <div class="tech-item"><span class="tech-name">WSUS</span><span class="tech-role">Gestión de actualizaciones</span></div>
+      <div class="tech-item"><span class="tech-name">PowerShell</span><span class="tech-role">Automatización y gestión</span></div>
+      <div class="tech-item"><span class="tech-name">BitLocker</span><span class="tech-role">Cifrado de discos</span></div>
+      <div class="tech-item"><span class="tech-name">EFS</span><span class="tech-role">Cifrado de archivos</span></div>
+      <div class="tech-item"><span class="tech-name">GPO</span><span class="tech-role">Políticas de grupo</span></div>
+      <div class="tech-item"><span class="tech-name">UEFI/BIOS</span><span class="tech-role">Firmware y arranque seguro</span></div>
+      <div class="tech-item"><span class="tech-name">TPM 2.0</span><span class="tech-role">Criptoprocesador</span></div>
+      <div class="tech-item"><span class="tech-name">VirtualBox</span><span class="tech-role">Virtualización</span></div>
+    </div>
+  </div>
+
+  <!-- Bloque de descargas (8 PDFs) -->
+  <div class="downloads-section reveal" id="downloads">
+    <h2>📄 Memorias completas de las prácticas</h2>
+    <p>Cada práctica está documentada con su propio PDF, incluyendo capturas, configuraciones y análisis de seguridad.</p>
+    <div class="dl-grid">
+      <div class="dl-card">
+        <div class="dl-card-icon">📊</div>
+        <div class="dl-card-title">Auditoría de actualizaciones y parches</div>
+        <div class="dl-card-desc">Análisis de CVEs de Windows Server 2025, evaluación de parches y propuesta de gestión con WSUS.</div>
+        <a href="docs/Hardening_Windows_Actualizaciones.pdf" class="dl-card-btn" download>↓ Descargar PDF Auditoria</a>
+        <a href="docs/GestionWSUS.pdf" class="dl-card-btn" download>↓ Descargar PDF WSUS</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">⚙️</div>
+        <div class="dl-card-title">Reducción de servicios y firewall de host</div>
+        <div class="dl-card-desc">Deshabilitación de servicios innecesarios, bloqueo de NetBIOS, cambio de puerto RDP, reglas de firewall.</div>
+        <a href="docs/Hardening_Windows_Servicios_Firewall.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">📜</div>
+        <div class="dl-card-title">Líneas base (Security Compliance Toolkit)</div>
+        <div class="dl-card-desc">Importación de GPOs de Microsoft, análisis con Policy Analyzer, aplicación en OUs.</div>
+        <a href="docs/Hardening_Windows_LineasBase.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">🔒</div>
+        <div class="dl-card-title">Cifrado BitLocker y EFS</div>
+        <div class="dl-card-desc">Cifrado rápido de disco, gestión de claves, exportación de certificados, pruebas de acceso.</div>
+        <a href="docs/Hardening_Windows_BitLocker_EFS.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">🖥️</div>
+        <div class="dl-card-title">Configuración del sistema y arranque seguro</div>
+        <div class="dl-card-desc">ELAM, bcdedit, Credential Guard, UAC, verificación de firmas con sigverif.</div>
+        <a href="docs/Hardening_Windows_Arranque_Seguro.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">🔌</div>
+        <div class="dl-card-title">Auditoría y fortificación de BIOS/UEFI</div>
+        <div class="dl-card-desc">Identificación de características de seguridad, tabla de configuración inicial y fortificada, amenazas, mecanismos de seguridad.</div>
+        <a href="docs/Hardening_BIOS_UEFI.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">🔑</div>
+        <div class="dl-card-title">Políticas de contraseñas y auditoría</div>
+        <div class="dl-card-desc">Configuración de GPO de contraseñas, bloqueo de cuentas, auditoría de eventos 4624/4625.</div>
+        <a href="docs/Hardening_Windows_Password_Policy.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+    </div>
+    <p style="margin-top:24px; font-size:.75rem; color:var(--muted); text-align:center;">📌 Los PDFs deben ubicarse en la carpeta <code>docs/</code> con los nombres mostrados. Ajusta las rutas según tu estructura real.</p>
+  </div>
+
+  <!-- Terminal de conclusiones -->
+  <div class="section-block reveal">
+    <div class="section-label">06_conclusiones</div>
+    <h2 class="section-title">Resultados y métricas de seguridad</h2>
+    <div class="terminal">
+      <div class="term-header"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+      <div class="term-line"><span class="prompt">marina@hardening-windows:~$</span> <span class="cmd">./evaluate_hardening.sh --target DC</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Gestión centralizada de actualizaciones con WSUS operativa.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] 40+ servicios innecesarios deshabilitados (AppReadiness, RemoteRegistry, Audio, etc.).</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Firewall de host con reglas de entrada/salida específicas.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Líneas base de Microsoft importadas y adaptadas al contexto educativo.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] BitLocker activado en disco de datos (F:) con XtsAes128.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] EFS configurado y prueba de recuperación de archivos tras eliminar usuario.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] BIOS/UEFI fortificada: contraseñas, Secure Boot, TPM, deshabilitado Legacy.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Particiones EFI, recovery y sistema configuradas correctamente.</span></div>
+      <div class="term-line"><span class="term-warn">[ MEJORA ] Automatizar pruebas de restauración de BitLocker y EFS.</span></div>
+      <div class="term-line"><span class="term-warn">[ MEJORA ] Implementar SIEM para centralizar logs de eventos de seguridad.</span></div>
+      <div class="term-line"><span class="prompt">marina@hardening-windows:~$</span> <span class="cmd">echo "Hardening de Windows Server completado según buenas prácticas"</span></div>
+      <div class="term-line"><span class="term-success">Hardening de Windows Server completado según buenas prácticas</span></div>
+      <div class="term-line"><span class="prompt">marina@hardening-windows:~$ <span class="cursor-blink">▊</span></span></div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-box reveal">
+    <h2>¿Necesitas fortificar un entorno Windows Server?</h2>
+    <p>Este proyecto demuestra que domino el hardening completo de controladores de dominio: desde la BIOS/UEFI hasta la gestión de actualizaciones, pasando por el cifrado de discos y la reducción de superficie de ataque. Contacta conmigo para implementar una estrategia de seguridad similar en tu organización.</p>
+    <div class="cta-actions">
+      <a href="portfolio_marina.html#contact" class="btn-primary">→ Contactar</a>
+      <a href="portfolio_marina.html#portfolio" class="btn-outline">← Volver al portfolio</a>
+    </div>
+  </div>
+
+</div>
+
+<footer>MARINA DEL PILAR LÓPEZ OLIVA // HARDENING WINDOWS SERVER 2025 // 2025-2026</footer>
+
+<script>
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

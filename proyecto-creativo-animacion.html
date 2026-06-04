@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Creativo · Animación · Stop Motion y Cut Out | Marina del Pilar López Oliva</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Fira+Code:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#06080c;--surface:#0e1117;--card:#131821;
+  --accent:#00e5a0; --accent2:#a259ff; --gold:#ffd166;
+  --red:#ff6b6b; --fire:#ff9a3c;
+  --text:#eef0f5; --muted:#6b7280; --border:#1e2530;
+  --mono:'Fira Code',monospace; --display:'Syne',sans-serif; --body:'DM Sans',sans-serif;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--body);overflow-x:hidden;line-height:1.6;}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--gold);border-radius:2px;}
+
+nav{position:fixed;top:0;width:100%;z-index:100;background:rgba(6,8,12,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 6%;}
+.nav-inner{display:flex;justify-content:space-between;align-items:center;}
+.nav-logo{font-family:var(--mono);color:var(--accent);font-size:.85rem;letter-spacing:2px;text-decoration:none;}
+.nav-back{font-family:var(--mono);font-size:.7rem;color:var(--muted);text-decoration:none;letter-spacing:1px;transition:.2s;display:flex;align-items:center;gap:8px;}
+.nav-back:hover{color:var(--accent);}
+
+.proj-hero{min-height:55vh;display:flex;flex-direction:column;justify-content:flex-end;padding:120px 6% 60px;position:relative;overflow:hidden;}
+.proj-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 30% 50%,rgba(255,209,102,.06),transparent);}
+.proj-hero::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 50% 40% at 80% 50%,rgba(0,229,160,.04),transparent);}
+.hero-content{position:relative;z-index:1;max-width:1200px;margin:0 auto;width:100%;}
+.proj-badge{font-family:var(--mono);font-size:.65rem;color:var(--gold);border:1px solid rgba(255,209,102,.3);padding:5px 14px;border-radius:2px;letter-spacing:2px;display:inline-block;margin-bottom:20px;background:rgba(255,209,102,.06);}
+.proj-hero h1{font-family:var(--display);font-size:clamp(2.2rem,6vw,5rem);font-weight:800;letter-spacing:-2px;line-height:.95;margin-bottom:20px;}
+.proj-hero h1 span{color:var(--gold);}
+.proj-meta{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:32px;}
+.meta-item{font-family:var(--mono);font-size:.7rem;color:var(--muted);letter-spacing:1px;display:flex;align-items:center;gap:6px;}
+.meta-item span{color:var(--text);}
+.hero-tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:40px;}
+.tag{font-family:var(--mono);font-size:.6rem;color:var(--accent);border:1px solid rgba(0,229,160,.25);padding:4px 10px;border-radius:2px;letter-spacing:1px;}
+.tag.gold{color:var(--gold);border-color:rgba(255,209,102,.25);}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--gold);color:#000;font-family:var(--mono);font-size:.78rem;font-weight:600;padding:12px 28px;border-radius:3px;text-decoration:none;letter-spacing:1px;transition:.2s;}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(255,209,102,.25);}
+.btn-outline{display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--text);font-family:var(--mono);font-size:.78rem;padding:12px 28px;border-radius:3px;text-decoration:none;letter-spacing:1px;border:1px solid var(--border);transition:.2s;}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold);}
+
+.divider{height:1px;background:var(--border);}
+.content{max-width:1200px;margin:0 auto;padding:70px 6%;}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:70px;}
+.summary-card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:24px;position:relative;overflow:hidden;}
+.summary-card::before{content:'';position:absolute;bottom:0;left:0;width:100%;height:2px;background:var(--gold);}
+.summary-label{font-family:var(--mono);font-size:.6rem;color:var(--muted);letter-spacing:2px;margin-bottom:10px;}
+.summary-value{font-family:var(--display);font-size:1.4rem;font-weight:800;color:var(--text);}
+.summary-sub{font-size:.8rem;color:var(--muted);margin-top:4px;}
+
+.section-block{margin-bottom:60px;}
+.section-label{font-family:var(--mono);color:var(--gold);font-size:.7rem;letter-spacing:4px;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.section-title{font-family:var(--display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;margin-bottom:20px;}
+.prose{color:var(--muted);font-size:.97rem;line-height:1.9;}
+.prose strong{color:var(--text);}
+.prose p{margin-bottom:14px;}
+
+.arch-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px;}
+.arch-block{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px 24px;}
+.arch-block h4{font-family:var(--mono);font-size:.72rem;color:var(--gold);letter-spacing:2px;margin-bottom:12px;}
+.arch-block ul{list-style:none;display:flex;flex-direction:column;gap:8px;}
+.arch-block ul li{font-size:.85rem;color:var(--muted);display:flex;align-items:flex-start;gap:10px;line-height:1.5;}
+.arch-block ul li::before{content:'›';color:var(--gold);flex-shrink:0;margin-top:1px;}
+
+.phases{display:flex;flex-direction:column;gap:0;margin-top:24px;position:relative;}
+.phases::before{content:'';position:absolute;left:18px;top:0;bottom:0;width:1px;background:var(--border);}
+.phase{display:flex;gap:28px;padding-bottom:32px;position:relative;}
+.phase-dot{width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.65rem;color:var(--gold);flex-shrink:0;position:relative;z-index:1;}
+.phase-body{flex:1;padding-top:6px;}
+.phase-body h4{font-family:var(--display);font-size:1rem;font-weight:700;margin-bottom:6px;}
+.phase-body p{font-size:.85rem;color:var(--muted);line-height:1.7;}
+.phase-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.phase-tag{font-family:var(--mono);font-size:.58rem;color:var(--muted);border:1px solid var(--border);padding:2px 7px;border-radius:2px;}
+
+.tech-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:24px;}
+.tech-item{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:14px;text-align:center;}
+.tech-item .tech-name{font-family:var(--mono);font-size:.72rem;color:var(--text);display:block;margin-top:6px;}
+.tech-item .tech-role{font-family:var(--mono);font-size:.58rem;color:var(--muted);display:block;margin-top:3px;}
+
+.downloads-section{background:var(--card);border:1px solid rgba(255,209,102,.2);border-radius:8px;padding:40px;margin-top:70px;}
+.downloads-section h2{font-family:var(--display);font-size:clamp(1.4rem,3vw,2rem);font-weight:800;letter-spacing:-1px;margin-bottom:8px;}
+.downloads-section p{color:var(--muted);font-size:.9rem;margin-bottom:32px;max-width:500px;}
+.dl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+.dl-card{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:10px;transition:.2s;}
+.dl-card:hover{border-color:rgba(255,209,102,.3);}
+.dl-card-icon{font-size:1.6rem;}
+.dl-card-title{font-family:var(--display);font-size:.95rem;font-weight:700;}
+.dl-card-desc{font-size:.78rem;color:var(--muted);line-height:1.5;flex:1;}
+.dl-card-btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:.65rem;color:var(--gold);text-decoration:none;letter-spacing:1px;padding:7px 12px;border:1px solid rgba(255,209,102,.3);border-radius:2px;transition:.2s;width:fit-content;}
+.dl-card-btn:hover{background:rgba(255,209,102,.08);}
+
+.terminal{background:#080c10;border:1px solid var(--border);border-radius:6px;padding:20px 24px;font-family:var(--mono);font-size:.8rem;line-height:2;margin-top:24px;}
+.term-header{display:flex;gap:6px;margin-bottom:16px;}
+.dot{width:10px;height:10px;border-radius:50%;}
+.dot-r{background:#ff5f57;}.dot-y{background:#febc2e;}.dot-g{background:#28c840;}
+.term-line{color:var(--muted);}
+.term-line .prompt{color:var(--accent);}
+.term-line .cmd{color:var(--text);}
+.term-success{color:var(--accent);font-weight:bold;}
+
+.cta-box{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:48px;text-align:center;margin-top:70px;position:relative;overflow:hidden;}
+.cta-box::before{content:'';position:absolute;top:-50%;left:50%;transform:translateX(-50%);width:400px;height:400px;background:radial-gradient(circle,rgba(255,209,102,.04),transparent 70%);}
+.cta-box h2{font-family:var(--display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;margin-bottom:12px;}
+.cta-box p{color:var(--muted);font-size:.93rem;max-width:480px;margin:0 auto 28px;}
+.cta-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+
+footer{text-align:center;padding:32px;color:var(--muted);font-family:var(--mono);font-size:.65rem;letter-spacing:2px;border-top:1px solid var(--border);margin-top:0;}
+
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+
+@media(max-width:900px){
+  .summary-grid{grid-template-columns:1fr 1fr;}
+  .arch-grid{grid-template-columns:1fr;}
+  .proj-hero h1{font-size:2.2rem;}
+  .cta-box{padding:36px 24px;}
+}
+@media(max-width:600px){
+  .summary-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="portfolio_marina.html" class="nav-logo">MPLO://sec</a>
+    <a href="portfolio_marina.html#portfolio" class="nav-back">← Volver al portfolio</a>
+  </div>
+</nav>
+
+<section class="proj-hero">
+  <div class="hero-content">
+    <span class="proj-badge">PROYECTO CREATIVO · ANIMACIÓN</span>
+    <h1>Stop Motion y Cut Out<br><span>Animación tradicional y recortables</span></h1>
+    <div class="proj-meta">
+      <div class="meta-item">TÉCNICAS: <span>Stop motion (plastilina) · Cut out (fotograma a fotograma)</span></div>
+      <div class="meta-item">ROL: <span>Creación de personajes y escenarios · Animación · Postproducción</span></div>
+      <div class="meta-item">HERRAMIENTAS: <span>Cámara · Plastilina · Cartulinas · Premiere Pro</span></div>
+      <div class="meta-item">AÑO: <span>2021-2023 (CFGS Animación 3D)</span></div>
+    </div>
+    <div class="hero-tags">
+      <span class="tag gold">Stop motion</span>
+      <span class="tag gold">Cut out</span>
+      <span class="tag gold">Plastilina</span>
+      <span class="tag">Croma</span>
+      <span class="tag">Adobe Premiere</span>
+      <span class="tag">Trabajo en equipo</span>
+    </div>
+    <div class="hero-actions">
+      <a href="#downloads" class="btn-primary">↓ Ver vídeos</a>
+      <a href="portfolio_marina.html#portfolio" class="btn-outline">← Ver más proyectos</a>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<div class="content">
+
+  <!-- Resumen rápido -->
+  <div class="summary-grid reveal">
+    <div class="summary-card">
+      <div class="summary-label">PRÁCTICAS</div>
+      <div class="summary-value">2</div>
+      <div class="summary-sub">Stop motion (equipo) + Cut out (individual)</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-label">MI APORTACIÓN</div>
+      <div class="summary-value">Personaje Lolo (pingüino) + Iglú</div>
+      <div class="summary-sub">Diseño y animación de personajes y escenarios</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-label">POSTPRODUCCIÓN</div>
+      <div class="summary-value">Adobe Premiere · Croma</div>
+      <div class="summary-sub">Edición, títulos animados y efectos</div>
+    </div>
+  </div>
+
+  <!-- Contexto -->
+  <div class="section-block reveal">
+    <div class="section-label">01_contexto</div>
+    <h2 class="section-title">Aprendiendo técnicas de animación tradicional</h2>
+    <div class="prose">
+      <p>Durante el ciclo superior de <strong>Animación 3D, Juegos y Entornos Interactivos (A3D)</strong>, realizamos dos prácticas fundamentales para comprender las bases de la animación: <strong>Stop Motion</strong> (animación con plastilina, fotograma a fotograma) y <strong>Cut Out</strong> (recortables, también fotograma a fotograma).</p>
+      <p>La primera fue un <strong>trabajo en equipo</strong> donde cada miembro creó un personaje y una casa, y colaboramos en la animación conjunta. La segunda fue una <strong>práctica individual</strong> para dominar la técnica de cut out con personajes recortados.</p>
+      <p>Ambas incluyeron fases de <strong>storyboard, creación de títeres/recortables, rodaje fotograma a fotograma</strong> y <strong>postproducción en Adobe Premiere</strong> (croma key, edición de audio, títulos animados).</p>
+    </div>
+  </div>
+
+  <!-- Stop Motion (detallado) -->
+  <div class="section-block reveal">
+    <div class="section-label">02_stop_motion</div>
+    <h2 class="section-title">Stop motion · La historia de Lolo, el pingüino</h2>
+    <div class="arch-grid">
+      <div class="arch-block">
+        <h4>Sinopsis</h4>
+        <ul>
+          <li>Lolo es un pingüino que vive feliz en su iglú de hielo.</li>
+          <li>De repente, un meteorito azul cae sobre su iglú, destruyéndolo y enterrándolo bajo el hielo.</li>
+          <li>Devastado, Lolo emprende un viaje en busca de un nuevo hogar.</li>
+          <li>Encuentra a un oso negro con bigote que vive en una casa de madera. Lo deja entrar, pero la casa se mueve (parece haber una pelea) y Lolo sale huyendo.</li>
+          <li>Continúa hasta una casa de bambú donde vive un oso blanco y negro. Toca la puerta, le pide entrar, pero el oso se niega.</li>
+          <li>Finalmente, encuentra a un oso blanco que está terminando de construir su iglú. Le pide quedarse y el oso acepta.</li>
+          <li>Mientras Lolo entra, el oso blanco sale a buscar más materiales. Se encuentra con los otros dos osos, que le regalan una piña y un trozo de hielo.</li>
+          <li>Al darle el hielo, Lolo aparece y el oso blanco se lo entrega al pingüino. Los otros dos osos se sorprenden, el blanco y negro tira la piña, golpea a Lolo y este se cae.</li>
+          <li>El oso blanco discute con los otros dos, se golpean y caen los tres. Lolo se levanta confundido... y ahí termina.</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>Mi aportación</h4>
+        <ul>
+          <li><strong>Personaje:</strong> Lolo, el pingüino protagonista. Lo diseñé, modeleé con plastilina y animé durante la mayor parte del metraje.</li>
+          <li><strong>Escenario:</strong> El primer iglú que aparece en la pantalla (el que destruye el meteorito). Lo construí y decoré con plastilina y otros materiales.</li>
+          <li>Colaboré en la animación general, en la coordinación del equipo y en la postproducción (croma, edición de títulos, sincronización de audio).</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cut Out -->
+  <div class="section-block reveal">
+    <div class="section-label">03_cut_out</div>
+    <h2 class="section-title">Cut out · Animación de recortables en solitario</h2>
+    <div class="arch-grid">
+      <div class="arch-block">
+        <h4>Descripción</h4>
+        <ul>
+          <li>Práctica individual para dominar la técnica de cut out (animación fotograma a fotograma con figuras recortadas).</li>
+          <li>Todos los personajes y elementos fueron creados por mí, aunque los personajes están basados en diseños existentes (adaptación con estilo propio).</li>
+          <li>Sinopsis: Un niño con gorro esquiva enemigos que aparecen desde arriba y abajo. En una ocasión, al agacharse, un brazo negro con un bloque le golpea y se le cae el gorro. El niño intenta recuperarlo, pero la sombra (el brazo negro) lo agarra y lo saca de plano.</li>
+          <li>Aparece la sombra completa (con la misma forma que el niño pero en negro), se pone el gorro y entonces le aparecen ojos y una boca con una sonrisa malévola de color rojo.</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>Proceso técnico</h4>
+        <ul>
+          <li>Dibujo y recorte de personajes y fondos en cartulinas.</li>
+          <li>Animación fotograma a fotograma (stop motion con recortables).</li>
+          <li>Rodaje con cámara fija sobre mesa de luz.</li>
+          <li>Edición y montaje en Adobe Premiere (ajuste de tiempos, efectos de croma, títulos).</li>
+          <li>Integración de sonidos y música de fondo.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fases de producción comunes -->
+  <div class="section-block reveal">
+    <div class="section-label">04_producción</div>
+    <h2 class="section-title">Proceso de producción de animación</h2>
+    <div class="phases">
+      <div class="phase">
+        <div class="phase-dot">01</div>
+        <div class="phase-body">
+          <h4>Storyboard y guion</h4>
+          <p>Desarrollo de la historia, planos, tiempos y transiciones. En el stop motion se definieron las escenas clave y los movimientos de los personajes.</p>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">02</div>
+        <div class="phase-body">
+          <h4>Creación de títeres / recortables</h4>
+          <p>Para el stop motion: modelado de personajes en plastilina, creación de estructuras metálicas (armaduras) para dar estabilidad, construcción de escenarios (iglús, casas). Para el cut out: dibujo en cartulinas, recorte y articulación de piezas móviles.</p>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">03</div>
+        <div class="phase-body">
+          <h4>Rodaje fotograma a fotograma</h4>
+          <p>Captura de cada fotograma con cámara digital (o webcam), moviendo ligeramente los títeres/recortables entre toma y toma. Uso de software de captura (Stop Motion Studio, Dragonframe) o control manual.</p>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">04</div>
+        <div class="phase-body">
+          <h4>Postproducción</h4>
+          <p>Edición en Adobe Premiere: montaje de secuencias, eliminación de fondos con croma key, ajuste de velocidades, inserción de títulos animados, sincronización de audio (diálogos, efectos, música) y exportación final.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stack tecnológico -->
+  <div class="section-block reveal">
+    <div class="section-label">05_stack</div>
+    <h2 class="section-title">Materiales y herramientas</h2>
+    <div class="tech-grid">
+      <div class="tech-item"><span class="tech-name">Plastilina profesional</span><span class="tech-role">Modelado de personajes (stop motion)</span></div>
+      <div class="tech-item"><span class="tech-name">Cartulinas y papel</span><span class="tech-role">Recortables (cut out)</span></div>
+      <div class="tech-item"><span class="tech-name">Cámara digital / webcam</span><span class="tech-role">Captura fotograma a fotograma</span></div>
+      <div class="tech-item"><span class="tech-name">Adobe Premiere Pro</span><span class="tech-role">Edición, croma, títulos, audio</span></div>
+      <div class="tech-item"><span class="tech-name">Stop Motion Studio</span><span class="tech-role">Software de captura</span></div>
+      <div class="tech-item"><span class="tech-name">Mesa de luz / croma</span><span class="tech-role">Fondos y transparencias</span></div>
+    </div>
+  </div>
+
+  <!-- Bloque de descargas (vídeos) -->
+  <div class="downloads-section reveal" id="downloads">
+    <h2>📁 Vídeos de las animaciones</h2>
+    <p>Los vídeos de las prácticas están disponibles en los siguientes enlaces (añade aquí tus enlaces cuando los tengas públicos, por ejemplo en YouTube como "no listados" o en Google Drive con enlace público).</p>
+    <div class="dl-grid">
+      <div class="dl-card">
+        <div class="dl-card-icon">🎬</div>
+        <div class="dl-card-title">Stop motion – "Lolo el pingüino"</div>
+        <div class="dl-card-desc">Cortometraje animado con plastilina. Duración aprox. 1 min 30 s. Trabajo en equipo. Mi personaje: Lolo (pingüino) y el primer iglú.</div>
+        <a href="#" class="dl-card-btn" style="cursor:not-allowed; opacity:0.6;">🔜 Enlace pendiente</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">✂️</div>
+        <div class="dl-card-title">Cut out – "El niño y la sombra"</div>
+        <div class="dl-card-desc">Animación con recortables en solitario. Duración aprox. 30 s. Todos los personajes y fondos creados por mí.</div>
+        <a href="#" class="dl-card-btn" style="cursor:not-allowed; opacity:0.6;">🔜 Enlace pendiente</a>
+      </div>
+    </div>
+    <p style="margin-top:24px; font-size:.75rem; color:var(--muted); text-align:center;">📌 Cuando tengas los vídeos subidos (por ejemplo a YouTube como "No listados" o a Google Drive con enlace público), sustituye el "#" de los enlaces por las URLs reales.</p>
+  </div>
+
+  <!-- Terminal de conclusiones -->
+  <div class="section-block reveal">
+    <div class="section-label">06_conclusiones</div>
+    <h2 class="section-title">Aprendizajes</h2>
+    <div class="terminal">
+      <div class="term-header"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+      <div class="term-line"><span class="prompt">marina@animacion:~$</span> <span class="cmd">./learn_stop_motion.sh</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Creación de personajes con plastilina (Lolo, el pingüino).</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Construcción de escenarios (iglú, casas) y decorados.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Animación fotograma a fotograma (stop motion y cut out).</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Edición y postproducción en Adobe Premiere (croma, títulos, audio).</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Trabajo en equipo coordinado para stop motion.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Práctica individual de cut out con personajes recortados.</span></div>
+      <div class="term-line"><span class="prompt">marina@animacion:~$</span> <span class="cmd">echo "Técnicas de animación tradicional dominadas"</span></div>
+      <div class="term-line"><span class="term-success">Técnicas de animación tradicional dominadas</span></div>
+      <div class="term-line"><span class="prompt">marina@animacion:~$ <span class="cursor-blink">▊</span></span></div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-box reveal">
+    <h2>¿Te interesa mi trabajo como animadora?</h2>
+    <p>Este proyecto demuestra que manejo técnicas de animación tradicional (stop motion y cut out), sé trabajar en equipo y tengo experiencia en postproducción con Adobe Premiere. Si necesitas un animador para un proyecto creativo, contacta conmigo.</p>
+    <div class="cta-actions">
+      <a href="portfolio_marina.html#contact" class="btn-primary">→ Contactar</a>
+      <a href="portfolio_marina.html#portfolio" class="btn-outline">← Volver al portfolio</a>
+    </div>
+  </div>
+
+</div>
+
+<footer>MARINA DEL PILAR LÓPEZ OLIVA // CREATIVO · STOP MOTION Y CUT OUT // 2021-2023</footer>
+
+<script>
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

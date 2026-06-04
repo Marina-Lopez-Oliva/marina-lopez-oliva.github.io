@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PFC ASIR — Red Corporativa 360° | Marina del Pilar López Oliva</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Fira+Code:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#06080c;--surface:#0e1117;--card:#131821;
+  --accent:#00e5a0;--accent2:#a259ff;--gold:#ffd166;
+  --text:#eef0f5;--muted:#6b7280;--border:#1e2530;
+  --mono:'Fira Code',monospace;--display:'Syne',sans-serif;--body:'DM Sans',sans-serif;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--body);overflow-x:hidden;line-height:1.6;}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--accent);border-radius:2px;}
+
+/* Nav */
+nav{position:fixed;top:0;width:100%;z-index:100;background:rgba(6,8,12,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 6%;}
+.nav-inner{display:flex;justify-content:space-between;align-items:center;}
+.nav-logo{font-family:var(--mono);color:var(--accent);font-size:.85rem;letter-spacing:2px;text-decoration:none;}
+.nav-back{font-family:var(--mono);font-size:.7rem;color:var(--muted);text-decoration:none;letter-spacing:1px;transition:.2s;display:flex;align-items:center;gap:8px;}
+.nav-back:hover{color:var(--accent);}
+
+/* Hero del proyecto */
+.proj-hero{min-height:55vh;display:flex;flex-direction:column;justify-content:flex-end;padding:120px 6% 60px;position:relative;overflow:hidden;}
+.proj-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 30% 50%,rgba(255,209,102,.06),transparent);}
+.proj-hero::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 50% 40% at 80% 50%,rgba(0,229,160,.04),transparent);}
+.hero-content{position:relative;z-index:1;max-width:1200px;margin:0 auto;width:100%;}
+.proj-badge{font-family:var(--mono);font-size:.65rem;color:var(--gold);border:1px solid rgba(255,209,102,.3);padding:5px 14px;border-radius:2px;letter-spacing:2px;display:inline-block;margin-bottom:20px;background:rgba(255,209,102,.06);}
+.proj-hero h1{font-family:var(--display);font-size:clamp(2.2rem,6vw,5rem);font-weight:800;letter-spacing:-2px;line-height:.95;margin-bottom:20px;}
+.proj-hero h1 span{color:var(--accent);}
+.proj-meta{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:32px;}
+.meta-item{font-family:var(--mono);font-size:.7rem;color:var(--muted);letter-spacing:1px;display:flex;align-items:center;gap:6px;}
+.meta-item span{color:var(--text);}
+.hero-tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:40px;}
+.tag{font-family:var(--mono);font-size:.6rem;color:var(--accent);border:1px solid rgba(0,229,160,.25);padding:4px 10px;border-radius:2px;letter-spacing:1px;}
+.tag.gold{color:var(--gold);border-color:rgba(255,209,102,.25);}
+.tag.purple{color:var(--accent2);border-color:rgba(162,89,255,.25);}
+.hero-actions{display:flex;gap:14px;flex-wrap:wrap;}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#000;font-family:var(--mono);font-size:.78rem;font-weight:600;padding:12px 28px;border-radius:3px;text-decoration:none;letter-spacing:1px;transition:.2s;}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,229,160,.25);}
+.btn-outline{display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--text);font-family:var(--mono);font-size:.78rem;padding:12px 28px;border-radius:3px;text-decoration:none;letter-spacing:1px;border:1px solid var(--border);transition:.2s;}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent);}
+
+/* Divider */
+.divider{height:1px;background:var(--border);margin:0;}
+
+/* Contenido */
+.content{max-width:1200px;margin:0 auto;padding:70px 6%;}
+
+/* Grid de resumen */
+.summary-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:70px;}
+.summary-card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:24px;position:relative;overflow:hidden;}
+.summary-card::before{content:'';position:absolute;bottom:0;left:0;width:100%;height:2px;background:var(--accent);}
+.summary-card.gold::before{background:var(--gold);}
+.summary-card.purple::before{background:var(--accent2);}
+.summary-label{font-family:var(--mono);font-size:.6rem;color:var(--muted);letter-spacing:2px;margin-bottom:10px;}
+.summary-value{font-family:var(--display);font-size:1.4rem;font-weight:800;color:var(--text);}
+.summary-sub{font-size:.8rem;color:var(--muted);margin-top:4px;}
+
+/* Secciones de contenido */
+.section-block{margin-bottom:60px;}
+.section-label{font-family:var(--mono);color:var(--accent);font-size:.7rem;letter-spacing:4px;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.section-title{font-family:var(--display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;margin-bottom:20px;}
+.prose{color:var(--muted);font-size:.97rem;line-height:1.9;}
+.prose strong{color:var(--text);}
+.prose p{margin-bottom:14px;}
+
+/* Arquitectura — bloques visuales */
+.arch-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px;}
+.arch-block{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px 24px;}
+.arch-block h4{font-family:var(--mono);font-size:.72rem;color:var(--accent);letter-spacing:2px;margin-bottom:12px;}
+.arch-block ul{list-style:none;display:flex;flex-direction:column;gap:8px;}
+.arch-block ul li{font-size:.85rem;color:var(--muted);display:flex;align-items:flex-start;gap:10px;line-height:1.5;}
+.arch-block ul li::before{content:'›';color:var(--accent);flex-shrink:0;margin-top:1px;}
+
+/* Fases del proyecto */
+.phases{display:flex;flex-direction:column;gap:0;margin-top:24px;position:relative;}
+.phases::before{content:'';position:absolute;left:18px;top:0;bottom:0;width:1px;background:var(--border);}
+.phase{display:flex;gap:28px;padding-bottom:32px;position:relative;}
+.phase-dot{width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.65rem;color:var(--accent);flex-shrink:0;position:relative;z-index:1;}
+.phase-body{flex:1;padding-top:6px;}
+.phase-body h4{font-family:var(--display);font-size:1rem;font-weight:700;margin-bottom:6px;}
+.phase-body p{font-size:.85rem;color:var(--muted);line-height:1.7;}
+.phase-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.phase-tag{font-family:var(--mono);font-size:.58rem;color:var(--muted);border:1px solid var(--border);padding:2px 7px;border-radius:2px;}
+
+/* Problemas y soluciones */
+.problem-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px;}
+.problem-card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px;}
+.problem-card h4{font-family:var(--mono);font-size:.68rem;color:rgba(255,80,80,.8);letter-spacing:1px;margin-bottom:8px;}
+.problem-card p{font-size:.83rem;color:var(--muted);line-height:1.6;}
+.solution-card{background:var(--card);border:1px solid rgba(0,229,160,.15);border-radius:6px;padding:20px;}
+.solution-card h4{font-family:var(--mono);font-size:.68rem;color:var(--accent);letter-spacing:1px;margin-bottom:8px;}
+.solution-card p{font-size:.83rem;color:var(--muted);line-height:1.6;}
+
+/* Stack tecnológico */
+.tech-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:24px;}
+.tech-item{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:14px;text-align:center;}
+.tech-item .tech-name{font-family:var(--mono);font-size:.72rem;color:var(--text);display:block;margin-top:6px;}
+.tech-item .tech-role{font-family:var(--mono);font-size:.58rem;color:var(--muted);display:block;margin-top:3px;}
+
+/* Terminal de conclusiones */
+.terminal{background:#080c10;border:1px solid var(--border);border-radius:6px;padding:20px 24px;font-family:var(--mono);font-size:.8rem;line-height:2;margin-top:24px;}
+.term-header{display:flex;gap:6px;margin-bottom:16px;}
+.dot{width:10px;height:10px;border-radius:50%;}
+.dot-r{background:#ff5f57;}.dot-y{background:#febc2e;}.dot-g{background:#28c840;}
+.term-line{color:var(--muted);}
+.term-line .prompt{color:var(--accent);}
+.term-line .cmd{color:var(--text);}
+.term-line .out{color:#6b8fa3;}
+.term-success{color:var(--accent);font-weight:bold;}
+.term-warn{color:var(--gold);}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+.cursor-blink{animation:blink 1s infinite;}
+
+/* CTA final */
+.cta-box{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:48px;text-align:center;margin-top:70px;position:relative;overflow:hidden;}
+.cta-box::before{content:'';position:absolute;top:-50%;left:50%;transform:translateX(-50%);width:400px;height:400px;background:radial-gradient(circle,rgba(0,229,160,.04),transparent 70%);}
+.cta-box h2{font-family:var(--display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;margin-bottom:12px;}
+.cta-box p{color:var(--muted);font-size:.93rem;max-width:480px;margin:0 auto 28px;}
+.cta-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+
+footer{text-align:center;padding:32px;color:var(--muted);font-family:var(--mono);font-size:.65rem;letter-spacing:2px;border-top:1px solid var(--border);margin-top:0;}
+
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+
+@media(max-width:900px){
+  .summary-grid{grid-template-columns:1fr 1fr;}
+  .arch-grid{grid-template-columns:1fr;}
+  .problem-grid{grid-template-columns:1fr;}
+  .proj-hero h1{font-size:2.2rem;}
+  .cta-box{padding:36px 24px;}
+}
+@media(max-width:600px){
+  .summary-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="portfolio_marina.html" class="nav-logo">MPLO://sec</a>
+    <a href="portfolio_marina.html#portfolio" class="nav-back">← Volver al portfolio</a>
+  </div>
+</nav>
+
+<section class="proj-hero">
+  <div class="hero-content">
+    <span class="proj-badge">★ MENCIÓN DE HONOR · PFC ASIR 2024/2025</span>
+    <h1>Red Corporativa<br><span>360°</span></h1>
+    <div class="proj-meta">
+      <div class="meta-item">TIPO: <span>Proyecto Final de Ciclo</span></div>
+      <div class="meta-item">CICLO: <span>ASIR — IES Camp de Morvedre</span></div>
+      <div class="meta-item">AÑO: <span>2024 / 2025</span></div>
+      <div class="meta-item">ROL: <span>Diseño e implementación completa</span></div>
+    </div>
+    <div class="hero-tags">
+      <span class="tag gold">MENCIÓN DE HONOR</span>
+      <span class="tag">Active Directory</span>
+      <span class="tag">MikroTik</span>
+      <span class="tag">VLANs</span>
+      <span class="tag">QoS</span>
+      <span class="tag">Nextcloud</span>
+      <span class="tag">Liferay</span>
+      <span class="tag">Docker</span>
+      <span class="tag purple">Infraestructura completa</span>
+    </div>
+    <div class="hero-actions">
+      <a href="docs/PFC_LOPEZ_OLIVA_MARINADELPILAR.pdf" download class="btn-primary">↓ Descargar documentación completa</a>
+      <a href="portfolio_marina.html#portfolio" class="btn-outline">← Ver más proyectos</a>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<div class="content">
+
+  <!-- Resumen rápido -->
+  <div class="summary-grid reveal">
+    <div class="summary-card gold">
+      <div class="summary-label">CALIFICACIÓN</div>
+      <div class="summary-value">Mención de Honor</div>
+      <div class="summary-sub">Máxima distinción académica</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-label">ALCANCE</div>
+      <div class="summary-value">4 pilares</div>
+      <div class="summary-sub">AD · Red · Web · Colaboración</div>
+    </div>
+    <div class="summary-card purple">
+      <div class="summary-label">ENTORNO</div>
+      <div class="summary-value">50 usuarios</div>
+      <div class="summary-sub">Empresa ficticia HackerLearn</div>
+    </div>
+  </div>
+
+  <!-- Contexto -->
+  <div class="section-block reveal">
+    <div class="section-label">01_contexto</div>
+    <h2 class="section-title">El problema a resolver</h2>
+    <div class="prose">
+      <p>La empresa ficticia <strong>HackerLearn</strong>, una consultora de ciberseguridad con 50 empleados, operaba con una infraestructura tecnológica obsoleta que comprometía su seguridad, rendimiento y productividad. Red plana sin segmentación, cuentas locales sin autenticación centralizada, página web en WordPress con vulnerabilidades, y sin herramientas colaborativas integradas.</p>
+      <p>El proyecto abordó una <strong>modernización integral en cuatro frentes</strong>: sistema de autenticación centralizado, rediseño completo de la red, migración de la web corporativa y despliegue de plataforma colaborativa.</p>
+    </div>
+  </div>
+
+  <!-- Arquitectura -->
+  <div class="section-block reveal">
+    <div class="section-label">02_arquitectura</div>
+    <h2 class="section-title">Diseño de la solución</h2>
+    <div class="arch-grid">
+      <div class="arch-block">
+        <h4>AUTENTICACIÓN CENTRALIZADA</h4>
+        <ul>
+          <li>Active Directory con Samba4 sobre Ubuntu Server</li>
+          <li>Integración de clientes Windows y Ubuntu en el dominio</li>
+          <li>Políticas de grupo (GPO) y gestión centralizada de permisos</li>
+          <li>Single Sign-On para todos los servicios internos</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>INFRAESTRUCTURA DE RED</h4>
+        <ul>
+          <li>Router MikroTik RB5009 como núcleo de red</li>
+          <li>VLAN 10 (Servidores) · VLAN 20 (Empleados) · VLAN 30 (Invitados)</li>
+          <li>QoS y control de ancho de banda por Queue Tree</li>
+          <li>Switches TP-Link TL-SG3210 gestionables + APs Ubiquiti UniFi</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>WEB CORPORATIVA</h4>
+        <ul>
+          <li>Migración de WordPress a Liferay (plataforma empresarial)</li>
+          <li>Despliegue en Docker para aislamiento y escalabilidad</li>
+          <li>Certificados SSL con Certbot + Let's Encrypt</li>
+          <li>Control de permisos de usuarios por roles</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>HERRAMIENTAS COLABORATIVAS</h4>
+        <ul>
+          <li>Nextcloud instalado en servidor interno</li>
+          <li>Integración LDAP con Active Directory</li>
+          <li>Gestión de ficheros, calendarios y comunicación</li>
+          <li>Autenticación 2FA para acceso seguro</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fases de implementación -->
+  <div class="section-block reveal">
+    <div class="section-label">03_implementación</div>
+    <h2 class="section-title">Fases del proyecto</h2>
+    <div class="phases">
+      <div class="phase">
+        <div class="phase-dot">01</div>
+        <div class="phase-body">
+          <h4>Análisis y diseño</h4>
+          <p>Estudio de la infraestructura existente, identificación de problemas y comparativa de soluciones (AD vs OpenLDAP vs FreeIPA, Liferay vs Joomla vs WebFlow). Diseño de VLANs, esquema de red y planificación del AD.</p>
+          <div class="phase-tags"><span class="phase-tag">Análisis</span><span class="phase-tag">Diagramas</span><span class="phase-tag">VirtualBox</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">02</div>
+        <div class="phase-body">
+          <h4>Active Directory con Samba4</h4>
+          <p>Implementación del dominio en Ubuntu Server, unión de clientes Windows y Ubuntu, configuración de GPOs, políticas de contraseñas y gestión centralizada de usuarios con grupos por departamento.</p>
+          <div class="phase-tags"><span class="phase-tag">Samba4</span><span class="phase-tag">SSSD</span><span class="phase-tag">Ubuntu Server</span><span class="phase-tag">Windows Server</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">03</div>
+        <div class="phase-body">
+          <h4>Red con MikroTik</h4>
+          <p>Configuración del router MikroTik con VLANs segmentadas, reglas de firewall por VLAN, QoS con Queue Tree para priorizar tráfico crítico y switches TP-Link gestionables para distribución correcta del tráfico.</p>
+          <div class="phase-tags"><span class="phase-tag">RouterOS</span><span class="phase-tag">Winbox</span><span class="phase-tag">VLANs</span><span class="phase-tag">QoS</span><span class="phase-tag">Firewall</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">04</div>
+        <div class="phase-body">
+          <h4>Migración web a Liferay</h4>
+          <p>Despliegue de Liferay en Docker, migración del contenido desde WordPress, configuración SSL con Certbot, sistema de permisos por roles de usuario y adaptación de la imagen corporativa.</p>
+          <div class="phase-tags"><span class="phase-tag">Docker</span><span class="phase-tag">Liferay</span><span class="phase-tag">Certbot</span><span class="phase-tag">SSL</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">05</div>
+        <div class="phase-body">
+          <h4>Nextcloud + integración AD</h4>
+          <p>Instalación de Nextcloud en servidor interno, integración LDAP con el AD para autenticación unificada, despliegue de aplicaciones colaborativas (Talk, Calendar) y configuración de 2FA.</p>
+          <div class="phase-tags"><span class="phase-tag">Nextcloud</span><span class="phase-tag">LDAP</span><span class="phase-tag">2FA</span><span class="phase-tag">Let's Encrypt</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Problemas encontrados -->
+  <div class="section-block reveal">
+    <div class="section-label">04_incidencias</div>
+    <h2 class="section-title">Problemas resueltos</h2>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <h4>PROBLEMA — AD en Ubuntu</h4>
+        <p>Al crear el dominio Samba4, error por paquetes ausentes que impedían la inicialización del controlador de dominio.</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN</h4>
+        <p>Instalación manual de dependencias faltantes e identificación del paquete específico mediante logs de Samba. Dominio operativo tras reinstalación controlada.</p>
+      </div>
+      <div class="problem-card">
+        <h4>PROBLEMA — Usuario dominio en Ubuntu cliente</h4>
+        <p>Firefox no encontraba el directorio home del usuario de dominio por el formato <code>usuario@dominio</code> en la ruta.</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN</h4>
+        <p>Modificación de <code>/etc/sssd/sssd.conf</code>: ajuste de <code>fallback_home</code> a <code>/home/%u</code> y desactivación de <code>use_fully_qualified_names</code>.</p>
+      </div>
+      <div class="problem-card">
+        <h4>PROBLEMA — Conflicto usuarios Nextcloud</h4>
+        <p>Usuario administrador local con mismo nombre que usuario AD impedía el acceso al usuario de directorio.</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN</h4>
+        <p>Promoción previa de usuarios AD a administradores, eliminación del admin local duplicado y verificación de acceso con las cuentas del dominio.</p>
+      </div>
+      <div class="problem-card">
+        <h4>PROBLEMA — App store Nextcloud inaccesible</h4>
+        <p>La tienda de aplicaciones no cargaba desde la interfaz web, posiblemente por ausencia de certificado SSL válido en ese momento.</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN</h4>
+        <p>Descarga manual de los paquetes desde nextcloud.com/apps y transferencia al servidor para instalación por línea de comandos con <code>occ</code>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stack tecnológico -->
+  <div class="section-block reveal">
+    <div class="section-label">05_tecnologías</div>
+    <h2 class="section-title">Stack utilizado</h2>
+    <div class="tech-grid">
+      <div class="tech-item"><span class="tech-name">Active Directory</span><span class="tech-role">Autenticación</span></div>
+      <div class="tech-item"><span class="tech-name">Samba4</span><span class="tech-role">Controlador dominio</span></div>
+      <div class="tech-item"><span class="tech-name">MikroTik RB5009</span><span class="tech-role">Router principal</span></div>
+      <div class="tech-item"><span class="tech-name">RouterOS / Winbox</span><span class="tech-role">Gestión red</span></div>
+      <div class="tech-item"><span class="tech-name">VLANs + QoS</span><span class="tech-role">Segmentación</span></div>
+      <div class="tech-item"><span class="tech-name">TP-Link TL-SG3210</span><span class="tech-role">Switches gestionables</span></div>
+      <div class="tech-item"><span class="tech-name">Ubiquiti UniFi</span><span class="tech-role">Puntos de acceso</span></div>
+      <div class="tech-item"><span class="tech-name">Liferay</span><span class="tech-role">Web corporativa</span></div>
+      <div class="tech-item"><span class="tech-name">Docker</span><span class="tech-role">Contenedores</span></div>
+      <div class="tech-item"><span class="tech-name">Nextcloud</span><span class="tech-role">Colaboración</span></div>
+      <div class="tech-item"><span class="tech-name">Certbot / SSL</span><span class="tech-role">Certificados</span></div>
+      <div class="tech-item"><span class="tech-name">VirtualBox</span><span class="tech-role">Virtualización</span></div>
+    </div>
+  </div>
+
+  <!-- Terminal de conclusiones -->
+  <div class="section-block reveal">
+    <div class="section-label">06_conclusiones</div>
+    <h2 class="section-title">Resultados obtenidos</h2>
+    <div class="terminal">
+      <div class="term-header"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+      <div class="term-line"><span class="prompt">marina@pfc-asir:~$</span> <span class="cmd">./evaluate_objectives.sh --all</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Autenticación centralizada — AD operativo con 50 usuarios en dominio</span></div>
+      <div class="term-success term-line"><span class="term-success">[ OK ] Red segmentada — 3 VLANs + QoS + firewall por zonas</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Web corporativa — Liferay en Docker con SSL y gestión de roles</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Nextcloud operativo — integrado con AD, 2FA habilitado</span></div>
+      <div class="term-line"><span class="term-warn">[ MEJORA ] SSL en Nextcloud · Backups automatizados · MFA global</span></div>
+      <div class="term-line"><span class="prompt">marina@pfc-asir:~$</span> <span class="cmd">cat nota_final.txt</span></div>
+      <div class="term-line"><span class="term-success">MENCIÓN DE HONOR — Proyecto evaluado con la máxima distinción académica</span></div>
+      <div class="term-line"><span class="prompt">marina@pfc-asir:~$ <span class="cursor-blink">▊</span></span></div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-box reveal">
+    <h2>¿Quieres ver la documentación completa?</h2>
+    <p>El documento incluye diagramas de red, capturas del proceso de implementación, análisis comparativo de tecnologías y plan de mejoras futuras.</p>
+    <div class="cta-actions">
+      <a href="docs/PFC_LOPEZ_OLIVA_MARINADELPILAR.pdf" download class="btn-primary">↓ Descargar PDF completo</a>
+      <a href="portfolio_marina.html#contact" class="btn-outline">→ Contactar</a>
+    </div>
+  </div>
+
+</div>
+
+<footer>MARINA DEL PILAR LÓPEZ OLIVA // PFC ASIR 2024/2025 // MENCIÓN DE HONOR</footer>
+
+<script>
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

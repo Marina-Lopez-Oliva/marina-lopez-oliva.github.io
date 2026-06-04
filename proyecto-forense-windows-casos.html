@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Análisis forense de sistemas Windows · AfricanFalls, Lone Wolf, Richard Warner | Marina del Pilar López Oliva</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Fira+Code:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#06080c;--surface:#0e1117;--card:#131821;
+  --accent:#00e5a0; --accent2:#a259ff; --gold:#ffd166;
+  --blue:#7eb8ff; --fire:#ff9a3c;
+  --text:#eef0f5; --muted:#6b7280; --border:#1e2530;
+  --mono:'Fira Code',monospace; --display:'Syne',sans-serif; --body:'DM Sans',sans-serif;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--body);overflow-x:hidden;line-height:1.6;}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--blue);border-radius:2px;}
+
+nav{position:fixed;top:0;width:100%;z-index:100;background:rgba(6,8,12,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 6%;}
+.nav-inner{display:flex;justify-content:space-between;align-items:center;}
+.nav-logo{font-family:var(--mono);color:var(--accent);font-size:.85rem;letter-spacing:2px;text-decoration:none;}
+.nav-back{font-family:var(--mono);font-size:.7rem;color:var(--muted);text-decoration:none;letter-spacing:1px;transition:.2s;display:flex;align-items:center;gap:8px;}
+.nav-back:hover{color:var(--accent);}
+
+.proj-hero{min-height:55vh;display:flex;flex-direction:column;justify-content:flex-end;padding:120px 6% 60px;position:relative;overflow:hidden;}
+.proj-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 30% 50%,rgba(126,184,255,.06),transparent);}
+.proj-hero::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 50% 40% at 80% 50%,rgba(0,229,160,.04),transparent);}
+.hero-content{position:relative;z-index:1;max-width:1200px;margin:0 auto;width:100%;}
+.proj-badge{font-family:var(--mono);font-size:.65rem;color:var(--blue);border:1px solid rgba(126,184,255,.3);padding:5px 14px;border-radius:2px;letter-spacing:2px;display:inline-block;margin-bottom:20px;background:rgba(126,184,255,.06);}
+.proj-hero h1{font-family:var(--display);font-size:clamp(2.2rem,6vw,5rem);font-weight:800;letter-spacing:-2px;line-height:.95;margin-bottom:20px;}
+.proj-hero h1 span{color:var(--blue);}
+.proj-meta{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:32px;}
+.meta-item{font-family:var(--mono);font-size:.7rem;color:var(--muted);letter-spacing:1px;display:flex;align-items:center;gap:6px;}
+.meta-item span{color:var(--text);}
+.hero-tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:40px;}
+.tag{font-family:var(--mono);font-size:.6rem;color:var(--accent);border:1px solid rgba(0,229,160,.25);padding:4px 10px;border-radius:2px;letter-spacing:1px;}
+.tag.blue{color:var(--blue);border-color:rgba(126,184,255,.25);}
+.tag.gold{color:var(--gold);border-color:rgba(255,209,102,.25);}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--blue);color:#000;font-family:var(--mono);font-size:.78rem;font-weight:600;padding:12px 28px;border-radius:3px;text-decoration:none;letter-spacing:1px;transition:.2s;}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(126,184,255,.25);}
+.btn-outline{display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--text);font-family:var(--mono);font-size:.78rem;padding:12px 28px;border-radius:3px;text-decoration:none;letter-spacing:1px;border:1px solid var(--border);transition:.2s;}
+.btn-outline:hover{border-color:var(--blue);color:var(--blue);}
+
+.divider{height:1px;background:var(--border);}
+.content{max-width:1200px;margin:0 auto;padding:70px 6%;}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:70px;}
+.summary-card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:24px;position:relative;overflow:hidden;}
+.summary-card::before{content:'';position:absolute;bottom:0;left:0;width:100%;height:2px;background:var(--blue);}
+.summary-card.gold::before{background:var(--gold);}
+.summary-card.purple::before{background:var(--accent2);}
+.summary-label{font-family:var(--mono);font-size:.6rem;color:var(--muted);letter-spacing:2px;margin-bottom:10px;}
+.summary-value{font-family:var(--display);font-size:1.4rem;font-weight:800;color:var(--text);}
+.summary-sub{font-size:.8rem;color:var(--muted);margin-top:4px;}
+
+.section-block{margin-bottom:60px;}
+.section-label{font-family:var(--mono);color:var(--blue);font-size:.7rem;letter-spacing:4px;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.section-title{font-family:var(--display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;margin-bottom:20px;}
+.prose{color:var(--muted);font-size:.97rem;line-height:1.9;}
+.prose strong{color:var(--text);}
+.prose p{margin-bottom:14px;}
+
+.arch-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px;}
+.arch-block{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px 24px;}
+.arch-block h4{font-family:var(--mono);font-size:.72rem;color:var(--blue);letter-spacing:2px;margin-bottom:12px;}
+.arch-block ul{list-style:none;display:flex;flex-direction:column;gap:8px;}
+.arch-block ul li{font-size:.85rem;color:var(--muted);display:flex;align-items:flex-start;gap:10px;line-height:1.5;}
+.arch-block ul li::before{content:'›';color:var(--blue);flex-shrink:0;margin-top:1px;}
+
+.phases{display:flex;flex-direction:column;gap:0;margin-top:24px;position:relative;}
+.phases::before{content:'';position:absolute;left:18px;top:0;bottom:0;width:1px;background:var(--border);}
+.phase{display:flex;gap:28px;padding-bottom:32px;position:relative;}
+.phase-dot{width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.65rem;color:var(--blue);flex-shrink:0;position:relative;z-index:1;}
+.phase-body{flex:1;padding-top:6px;}
+.phase-body h4{font-family:var(--display);font-size:1rem;font-weight:700;margin-bottom:6px;}
+.phase-body p{font-size:.85rem;color:var(--muted);line-height:1.7;}
+.phase-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.phase-tag{font-family:var(--mono);font-size:.58rem;color:var(--muted);border:1px solid var(--border);padding:2px 7px;border-radius:2px;}
+
+.problem-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px;}
+.problem-card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px;}
+.problem-card h4{font-family:var(--mono);font-size:.68rem;color:rgba(255,80,80,.8);letter-spacing:1px;margin-bottom:8px;}
+.problem-card p{font-size:.83rem;color:var(--muted);line-height:1.6;}
+.solution-card{background:var(--card);border:1px solid rgba(126,184,255,.15);border-radius:6px;padding:20px;}
+.solution-card h4{font-family:var(--mono);font-size:.68rem;color:var(--blue);letter-spacing:1px;margin-bottom:8px;}
+.solution-card p{font-size:.83rem;color:var(--muted);line-height:1.6;}
+
+.tech-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:24px;}
+.tech-item{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:14px;text-align:center;}
+.tech-item .tech-name{font-family:var(--mono);font-size:.72rem;color:var(--text);display:block;margin-top:6px;}
+.tech-item .tech-role{font-family:var(--mono);font-size:.58rem;color:var(--muted);display:block;margin-top:3px;}
+
+.downloads-section{background:var(--card);border:1px solid rgba(126,184,255,.2);border-radius:8px;padding:40px;margin-top:70px;}
+.downloads-section h2{font-family:var(--display);font-size:clamp(1.4rem,3vw,2rem);font-weight:800;letter-spacing:-1px;margin-bottom:8px;}
+.downloads-section p{color:var(--muted);font-size:.9rem;margin-bottom:32px;max-width:500px;}
+.dl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+.dl-card{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:10px;transition:.2s;}
+.dl-card:hover{border-color:rgba(126,184,255,.3);}
+.dl-card-icon{font-size:1.6rem;}
+.dl-card-title{font-family:var(--display);font-size:.95rem;font-weight:700;}
+.dl-card-desc{font-size:.78rem;color:var(--muted);line-height:1.5;flex:1;}
+.dl-card-btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:.65rem;color:var(--blue);text-decoration:none;letter-spacing:1px;padding:7px 12px;border:1px solid rgba(126,184,255,.3);border-radius:2px;transition:.2s;width:fit-content;}
+.dl-card-btn:hover{background:rgba(126,184,255,.08);}
+
+.terminal{background:#080c10;border:1px solid var(--border);border-radius:6px;padding:20px 24px;font-family:var(--mono);font-size:.8rem;line-height:2;margin-top:24px;}
+.term-header{display:flex;gap:6px;margin-bottom:16px;}
+.dot{width:10px;height:10px;border-radius:50%;}
+.dot-r{background:#ff5f57;}.dot-y{background:#febc2e;}.dot-g{background:#28c840;}
+.term-line{color:var(--muted);}
+.term-line .prompt{color:var(--accent);}
+.term-line .cmd{color:var(--text);}
+.term-line .out{color:#6b8fa3;}
+.term-success{color:var(--accent);font-weight:bold;}
+.term-warn{color:var(--gold);}
+.cursor-blink{animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+
+.cta-box{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:48px;text-align:center;margin-top:70px;position:relative;overflow:hidden;}
+.cta-box::before{content:'';position:absolute;top:-50%;left:50%;transform:translateX(-50%);width:400px;height:400px;background:radial-gradient(circle,rgba(126,184,255,.04),transparent 70%);}
+.cta-box h2{font-family:var(--display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;margin-bottom:12px;}
+.cta-box p{color:var(--muted);font-size:.93rem;max-width:480px;margin:0 auto 28px;}
+.cta-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+
+footer{text-align:center;padding:32px;color:var(--muted);font-family:var(--mono);font-size:.65rem;letter-spacing:2px;border-top:1px solid var(--border);margin-top:0;}
+
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+
+@media(max-width:900px){
+  .summary-grid{grid-template-columns:1fr 1fr;}
+  .arch-grid{grid-template-columns:1fr;}
+  .problem-grid{grid-template-columns:1fr;}
+  .proj-hero h1{font-size:2.2rem;}
+  .cta-box{padding:36px 24px;}
+}
+@media(max-width:600px){
+  .summary-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="portfolio_marina.html" class="nav-logo">SCL://sec</a>
+    <a href="portfolio_marina.html#portfolio" class="nav-back">← Volver al portfolio</a>
+  </div>
+</nav>
+
+<section class="proj-hero">
+  <div class="hero-content">
+    <span class="proj-badge">PROYECTO INTEGRADOR · 5 DOCUMENTOS FORENSES</span>
+    <h1>Análisis forense de sistemas Windows<br><span>Casos AfricanFalls, Lone Wolf y Richard Warner</span></h1>
+    <div class="proj-meta">
+      <div class="meta-item">CASOS: <span>AfricanFalls · Lone Wolf · Richard Warner (traidor.img)</span></div>
+      <div class="meta-item">HERRAMIENTAS: <span>Autopsy 4.22.1 · FTK Imager · Mimikatz · exiftool · hashes.com</span></div>
+      <div class="meta-item">TIPOS DE ANÁLISIS: <span>Disco completo · artefactos Windows · navegación · correo · USB · SAM</span></div>
+      <div class="meta-item">AÑO: <span>2025-2026</span></div>
+    </div>
+    <div class="hero-tags">
+      <span class="tag blue">Autopsy</span>
+      <span class="tag blue">FTK Imager</span>
+      <span class="tag blue">Análisis de discos</span>
+      <span class="tag gold">Recuperación archivos borrados</span>
+      <span class="tag">Historial web y correo</span>
+      <span class="tag">Mimikatz / SAM</span>
+    </div>
+    <div class="hero-actions">
+      <a href="#downloads" class="btn-primary">↓ Descargar informes</a>
+      <a href="portfolio_marina.html#portfolio" class="btn-outline">← Ver más proyectos</a>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<div class="content">
+
+  <!-- Resumen rápido -->
+  <div class="summary-grid reveal">
+    <div class="summary-card">
+      <div class="summary-label">CASOS ANALIZADOS</div>
+      <div class="summary-value">3</div>
+      <div class="summary-sub">AfricanFalls · Lone Wolf · Richard Warner</div>
+    </div>
+    <div class="summary-card gold">
+      <div class="summary-label">EVIDENCIAS CLAVE</div>
+      <div class="summary-value">10+</div>
+      <div class="summary-sub">Manifiesto, plan de ataque, correos con negociación, hashes NTLM</div>
+    </div>
+    <div class="summary-card purple">
+      <div class="summary-label">HALLAZGOS PRINCIPALES</div>
+      <div class="summary-value">Listas de contraseñas · Tor · FTP · GPS Zambia</div>
+      <div class="summary-sub">Planificación ataque · Exfiltración · Kerberos</div>
+    </div>
+  </div>
+
+  <!-- Contexto -->
+  <div class="section-block reveal">
+    <div class="section-label">01_contexto</div>
+    <h2 class="section-title">Análisis forense de discos completos con Autopsy</h2>
+    <div class="prose">
+      <p>Este proyecto agrupa cinco documentos forenses correspondientes al análisis de imágenes de disco completas de sistemas Windows (formato .ad1, .E01, .img) utilizando herramientas como <strong>Autopsy 4.22.1</strong>, <strong>FTK Imager</strong>, <strong>Mimikatz</strong>, <strong>exiftool</strong> y plataformas de cracking como <strong>hashes.com</strong>. Los casos analizados incluyen:</p>
+      <ul style="margin-left:2rem; color:var(--muted);">
+        <li><strong>AfricanFalls:</strong> Investigación de actividad sospechosa en el equipo de John Doe. Se identificaron descargas de listas de contraseñas, conexión FTP externa, instalación de Tor Browser, escaneo de puertos con Nmap, geolocalización de una foto en Zambia y recuperación de contraseñas de usuarios (John Doe: ctf2021, Anon: AFRICA!).</li>
+        <li><strong>Lone Wolf (DigitalCorpora):</strong> Análisis completo de la imagen LoneWolf.E01 (Windows 10 Education) perteneciente al usuario jcloudy. Se localizaron documentos de planificación de ataque (Planning.docx, The Cloudy Manifesto.docx), archivos eliminados (DemGun.jpg con dirección del DNC), historial de navegación con búsquedas de armas, zonas libres de armas, aeropuertos, manifestaciones anti-armas, métodos de escape (transferencias internacionales de dinero) y sincronización con servicios en la nube (OneDrive, Dropbox, Box, Google Drive).</li>
+        <li><strong>Richard Warner (traidor.img):</strong> Peritaje para una empresa de desarrollo software. Se confirmó el uso de un pendrive Kingston no autorizado, navegación improcedente (película "Trabajo Basura" de 1999), planificación de viaje a Gran Canaria y, sobre todo, una secuencia de correos electrónicos (Thunderbird) que evidencia una negociación económica con un tercero por información corporativa, incluyendo envío de enlace de Google Drive con contraseña condicionada al pago.</li>
+        <li><strong>TryHackMe Disk Analysis & Autopsy:</strong> Práctica introductoria de análisis de disco con Autopsy.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Arquitectura de metodología -->
+  <div class="section-block reveal">
+    <div class="section-label">02_metodología</div>
+    <h2 class="section-title">Procedimiento forense aplicado</h2>
+    <div class="arch-grid">
+      <div class="arch-block">
+        <h4>VERIFICACIÓN DE INTEGRIDAD</h4>
+        <ul>
+          <li>Cálculo de hashes MD5, SHA-1 y SHA-256 con FTK Imager y comandos nativos.</li>
+          <li>Contraste con los valores de referencia proporcionados en la cadena de custodia.</li>
+          <li>Documentación de discrepancias (error de transcripción en el caso traidor.img).</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>ANÁLISIS DE SISTEMA Y USUARIOS</h4>
+        <ul>
+          <li>Identificación del sistema operativo, nombre del equipo y arquitectura.</li>
+          <li>Listado de cuentas de usuario (OS Accounts).</li>
+          <li>Extracción de detalles de la cuenta objetivo (creación, último inicio, número de accesos, pista de contraseña).</li>
+          <li>Volcado del archivo SAM y SYSTEM para extraer hashes NTLM con Mimikatz.</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>ARTEFACTOS Y ACTIVIDAD DE USUARIO</h4>
+        <ul>
+          <li>Análisis de archivos eliminados (Deleted Files, papelera de reciclaje).</li>
+          <li>Recuperación de documentos (Office, PDF, imágenes) con carving si es necesario.</li>
+          <li>Historial web (Web History) y descargas (Web Downloads).</li>
+          <li>Correo electrónico (Thunderbird, correo web desde historial).</li>
+          <li>Dispositivos USB conectados (USB Device Attached).</li>
+          <li>Shell Bags (carpetas recientes).</li>
+          <li>Programas ejecutados (Run Programs, Prefetch).</li>
+          <li>Metadatos EXIF de imágenes (exiftool).</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fases de los casos -->
+  <div class="section-block reveal">
+    <div class="section-label">03_casos</div>
+    <h2 class="section-title">Resumen de los casos forenses</h2>
+    <div class="phases">
+      <div class="phase">
+        <div class="phase-dot">01</div>
+        <div class="phase-body">
+          <h4>TryHackMe – Disk Analysis & Autopsy</h4>
+          <p>Práctica introductoria de análisis forense de discos con Autopsy. Se trabajó con una imagen de disco para familiarizarse con la interfaz, creación de casos, análisis de artefactos y generación de líneas de tiempo.</p>
+          <div class="phase-tags"><span class="phase-tag">TryHackMe</span><span class="phase-tag">Autopsy</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">02</div>
+        <div class="phase-body">
+          <h4>Caso AfricanFalls (DiskDigger.ad1)</h4>
+          <p>Imagen de disco de John Doe. Se identificó: hash MD5 9471e69c95d8909ae60ddf30d50ffa1. Búsqueda "password cracking lists" el 29/04/2021 18:17:38 UTC. Conexión FTP a 192.168.1.20 (FileZilla, usuario kali). Eliminación de lista de contraseñas a las 18:22:17 UTC. Instalación de Tor Browser (0 ejecuciones). Correo dreammaker82@protonmail.com. Escaneo de puertos con Nmap al dominio dfir.science. Geolocalización de imagen en Zambia (coordenadas 16°00'00.0"S 23°00'00.0"E). Carpeta original de otra imagen: camera (LG Q7). Contraseña Anon: AFRICA!. Contraseña John Doe: ctf2021.</p>
+          <div class="phase-tags"><span class="phase-tag">Autopsy</span><span class="phase-tag">Mimikatz</span><span class="phase-tag">exiftool</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">03</div>
+        <div class="phase-body">
+          <h4>Caso Lone Wolf (LoneWolf.E01)</h4>
+          <p>Imagen de disco de jcloudy (Windows 10 Education). Usuario creado el 27/03/2018, último acceso 06/04/2018 14:26:27 CEST. Archivos eliminados: DemGun.jpg (dirección DNC). Documentos: Planning.docx (plan de ataque: objetivo cerca de aeropuerto, zona libre de armas, Kel-Tec Sub 2000, munición 9mm), The Cloudy Manifesto.docx (ideología anti-gobierno). Historial web: búsquedas de armas (FN P90, Kel-Tec), "#MolonLabe", "gun free zones DC", "430 South Capitol Street", "airports near DC", "police response times", "anti-gun rally near me", "velcro tear away clothes", métodos de sincronización con la nube, transferencias internacionales de dinero. Visitas a theblaze.com y breitbart.com. USBs conectados: SanDisk SDCZ80. Sincronización con Dropbox, Google Drive, Box Sync, OneDrive.</p>
+          <div class="phase-tags"><span class="phase-tag">Autopsy</span><span class="phase-tag">fls -d</span><span class="phase-tag">Prefetch</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">04</div>
+        <div class="phase-body">
+          <h4>Caso Richard Warner (traidor.img)</h4>
+          <p>Imagen de disco del equipo de Richard Warner para una empresa de desarrollo software. Verificación de integridad: discrepancia en MD5 y SHA-256 por posible error de transcripción (SHA-1 coincidente). Usuario Richard con última actividad 22/02/2023 22:56:41 CET. Nombre equipo: LADRONERA, Windows 10 Pro Education N. Dispositivo USB: Kingston DataTraveler 3.0. Historial: consulta de vuelos y hoteles a Gran Canaria, visualización de "Trabajo Basura" (1999) el 22/02/2023 15:29:44 CET. Navegador Opera configurado al inicio. Correos Thunderbird: negociación económica con tercero, exigencia de pago y contrato, envío de enlace Google Drive con contraseña condicionada. Patrón compatible con exfiltración de información corporativa.</p>
+          <div class="phase-tags"><span class="phase-tag">Thunderbird</span><span class="phase-tag">USBSTOR</span><span class="phase-tag">Shell Bags</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hallazgos clave -->
+  <div class="section-block reveal">
+    <div class="section-label">04_hallazgos</div>
+    <h2 class="section-title">Evidencias críticas por caso</h2>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <h4>AfricanFalls – Listas de contraseñas y Tor</h4>
+        <p>Descarga de 10-million-password-list, instalación de Tor Browser (no ejecutado). Conexión FTP externa. Contraseñas recuperadas: ctf2021 y AFRICA!.</p>
+      </div>
+      <div class="solution-card">
+        <h4>CONCLUSIÓN</h4>
+        <p>El equipo fue utilizado para actividades de reconocimiento y preparación de posible ataque, con intento de ocultación de evidencias.</p>
+      </div>
+      <div class="problem-card">
+        <h4>Lone Wolf – Plan de ataque y manifiesto</h4>
+        <p>Planning.docx detalla compra de armas y munición, objetivo en zona libre de armas. The Cloudy Manifesto.docx expresa ideología violenta y desconfianza hacia el gobierno.</p>
+      </div>
+      <div class="solution-card">
+        <h4>CONCLUSIÓN</h4>
+        <p>Evidencia sólida de planificación de un posible tiroteo masivo. Las búsquedas de direcciones gubernamentales, aeropuertos y métodos de escape refuerzan la intencionalidad.</p>
+      </div>
+      <div class="problem-card">
+        <h4>Richard Warner – Negociación y exfiltración</h4>
+        <p>Correos electrónicos con un tercero: exigencia de subida salarial y compensación por "operación", envío de enlace Google Drive, contraseña condicionada al pago, referencia a "contrato listo para firmar".</p>
+      </div>
+      <div class="solution-card">
+        <h4>CONCLUSIÓN</h4>
+        <p>Secuencia compatible con posible venta de información corporativa confidencial a cambio de contraprestación económica.</p>
+      </div>
+      <div class="problem-card">
+        <h4>Common – Dispositivos USB y navegación improcedente</h4>
+        <p>En los tres casos se detectaron conexiones de dispositivos USB externos (SanDisk, Kingston) y navegación no relacionada con la actividad laboral.</p>
+      </div>
+      <div class="solution-card">
+        <h4>CONCLUSIÓN</h4>
+        <p>Falta de control de periféricos y políticas de uso aceptable de equipos corporativos.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stack tecnológico -->
+  <div class="section-block reveal">
+    <div class="section-label">05_tecnologías</div>
+    <h2 class="section-title">Herramientas forenses utilizadas</h2>
+    <div class="tech-grid">
+      <div class="tech-item"><span class="tech-name">Autopsy 4.22.1</span><span class="tech-role">Análisis de discos</span></div>
+      <div class="tech-item"><span class="tech-name">FTK Imager</span><span class="tech-role">Carga y verificación de imágenes</span></div>
+      <div class="tech-item"><span class="tech-name">Mimikatz</span><span class="tech-role">Volcado de hashes SAM</span></div>
+      <div class="tech-item"><span class="tech-name">exiftool</span><span class="tech-role">Metadatos EXIF</span></div>
+      <div class="tech-item"><span class="tech-name">WinPrefetchView</span><span class="tech-role">Análisis de Prefetch</span></div>
+      <div class="tech-item"><span class="tech-name">hashes.com</span><span class="tech-role">Cracking de hashes</span></div>
+      <div class="tech-item"><span class="tech-name">Google Maps</span><span class="tech-role">Geolocalización</span></div>
+      <div class="tech-item"><span class="tech-name">Kali Linux</span><span class="tech-role">Entorno forense</span></div>
+    </div>
+  </div>
+
+  <!-- Bloque de descargas -->
+  <div class="downloads-section reveal" id="downloads">
+    <h2>📄 Documentación forense</h2>
+    <p>Informes periciales, writeups y prácticas de análisis de discos Windows.</p>
+    <div class="dl-grid">
+      <div class="dl-card">
+        <div class="dl-card-icon">🌍</div>
+        <div class="dl-card-title">Caso AfricanFalls (DiskDigger.ad1)</div>
+        <div class="dl-card-desc">Informe pericial completo que responde a 11 preguntas: hash MD5, búsqueda "password cracking lists", conexión FTP, eliminación de lista, ejecución de Tor, correo ProtonMail, escaneo dfir.science, geolocalización Zambia, carpeta original, contraseñas Anon y John Doe.</div>
+        <a href="docs/Forense_AfricanFalls_Informe.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">🐺</div>
+        <div class="dl-card-title">Caso Lone Wolf – Informe pericial</div>
+        <div class="dl-card-desc">Informe formal para autoridad judicial. Análisis completo de LoneWolf.E01: usuario jcloudy, documentos de planificación, archivos eliminados, historial de armas y zonas libres, USB, sincronización con la nube, timeline.</div>
+        <a href="docs/Forense_LoneWolf_Informe.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">📝</div>
+        <div class="dl-card-title">Caso Lone Wolf – Writeup técnico</div>
+        <div class="dl-card-desc">Documentación paso a paso del análisis de LoneWolf.E01 con Autopsy, incluyendo capturas de todas las evidencias encontradas (archivos, historial, USB, metadatos).</div>
+        <a href="docs/Forense_LoneWolf_Writeup.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">💼</div>
+        <div class="dl-card-title">Caso Richard Warner (traidor.img)</div>
+        <div class="dl-card-desc">Peritaje para empresa de desarrollo software. Verificación de integridad (discrepancia hash), dispositivo USB Kingston, navegación improcedente, planificación viaje Gran Canaria, correos Thunderbird con negociación y posible exfiltración de información.</div>
+        <a href="docs/Forense_Richard_Warner_Writeup.pdf" class="dl-card-btn" download>↓ Descargar PDF writeup</a>
+        <a href="docs/Forense_Richard_Warner_Informe.pdf" class="dl-card-btn" download>↓ Descargar PDF informe</a>
+      </div>
+    </div>
+    <p style="margin-top:24px; font-size:.75rem; color:var(--muted); text-align:center;">📌 Los PDFs deben ubicarse en la carpeta <code>docs/</code> con los nombres mostrados. Ajusta las rutas según tu estructura real.</p>
+  </div>
+
+  <!-- Terminal de conclusiones -->
+  <div class="section-block reveal">
+    <div class="section-label">06_conclusiones</div>
+    <h2 class="section-title">Resultados y lecciones aprendidas</h2>
+    <div class="terminal">
+      <div class="term-header"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+      <div class="term-line"><span class="prompt">marina@forensics-windows:~$</span> <span class="cmd">./evaluate_windows_cases.sh</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Verificación de integridad de 3 imágenes forenses (hashes MD5/SHA1/SHA256).</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] AfricanFalls: hash MD5, búsqueda listas contraseñas, conexión FTP, eliminación archivo, geolocalización Zambia, contraseñas recuperadas.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Lone Wolf: identificación de plan de ataque, manifiesto ideológico, búsquedas de armas y zonas libres, archivos eliminados, sincronización nube, timeline.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Richard Warner: análisis de correos Thunderbird, secuencia de negociación y posible exfiltración de información corporativa.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Dispositivos USB identificados en los tres casos (SanDisk, Kingston).</span></div>
+      <div class="term-line"><span class="term-warn">[ MEJORA ] Implementar automatización de extracción de artefactos con scripts de Autopsy (Python).</span></div>
+      <div class="term-line"><span class="term-warn">[ MEJORA ] En casos con discrepancias hash, solicitar verificación de la cadena de custodia original.</span></div>
+      <div class="term-line"><span class="prompt">marina@forensics-windows:~$</span> <span class="cmd">echo "Análisis forense completo de sistemas Windows (AfricanFalls, Lone Wolf, Richard Warner)"</span></div>
+      <div class="term-line"><span class="term-success">Análisis forense completo de sistemas Windows (AfricanFalls, Lone Wolf, Richard Warner)</span></div>
+      <div class="term-line"><span class="prompt">marina@forensics-windows:~$ <span class="cursor-blink">▊</span></span></div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-box reveal">
+    <h2>¿Necesitas un análisis forense de un sistema Windows?</h2>
+    <p>Este proyecto demuestra que domino el análisis forense de discos completos de Windows utilizando Autopsy, FTK Imager y herramientas complementarias. Puedo recuperar archivos eliminados, analizar historial web, correos electrónicos, dispositivos USB, volcar hashes SAM y elaborar informes periciales conforme a estándares judiciales.</p>
+    <div class="cta-actions">
+      <a href="portfolio_marina.html#contact" class="btn-primary">→ Contactar</a>
+      <a href="portfolio_marina.html#portfolio" class="btn-outline">← Volver al portfolio</a>
+    </div>
+  </div>
+
+</div>
+
+<footer>MARINA DEL PILAR LÓPEZ OLIVA // ANÁLISIS FORENSE DE SISTEMAS WINDOWS // 2025-2026</footer>
+
+<script>
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

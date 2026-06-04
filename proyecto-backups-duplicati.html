@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Copias de seguridad 3-2-1 · Duplicati | Marina del Pilar López Oliva</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Fira+Code:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#06080c;--surface:#0e1117;--card:#131821;
+  --accent:#00e5a0; --accent2:#a259ff; --gold:#ffd166;
+  --red:#ff6b6b; --fire:#ff9a3c;
+  --text:#eef0f5; --muted:#6b7280; --border:#1e2530;
+  --mono:'Fira Code',monospace; --display:'Syne',sans-serif; --body:'DM Sans',sans-serif;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--body);overflow-x:hidden;line-height:1.6;}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--accent);border-radius:2px;}
+
+nav{position:fixed;top:0;width:100%;z-index:100;background:rgba(6,8,12,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 6%;}
+.nav-inner{display:flex;justify-content:space-between;align-items:center;}
+.nav-logo{font-family:var(--mono);color:var(--accent);font-size:.85rem;letter-spacing:2px;text-decoration:none;}
+.nav-back{font-family:var(--mono);font-size:.7rem;color:var(--muted);text-decoration:none;letter-spacing:1px;transition:.2s;display:flex;align-items:center;gap:8px;}
+.nav-back:hover{color:var(--accent);}
+
+.proj-hero{min-height:55vh;display:flex;flex-direction:column;justify-content:flex-end;padding:120px 6% 60px;position:relative;overflow:hidden;}
+.proj-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 30% 50%,rgba(0,229,160,.06),transparent);}
+.proj-hero::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 50% 40% at 80% 50%,rgba(162,89,255,.04),transparent);}
+.hero-content{position:relative;z-index:1;max-width:1200px;margin:0 auto;width:100%;}
+.proj-badge{font-family:var(--mono);font-size:.65rem;color:var(--accent);border:1px solid rgba(0,229,160,.3);padding:5px 14px;border-radius:2px;letter-spacing:2px;display:inline-block;margin-bottom:20px;background:rgba(0,229,160,.06);}
+.proj-hero h1{font-family:var(--display);font-size:clamp(2.2rem,6vw,5rem);font-weight:800;letter-spacing:-2px;line-height:.95;margin-bottom:20px;}
+.proj-hero h1 span{color:var(--accent);}
+.proj-meta{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:32px;}
+.meta-item{font-family:var(--mono);font-size:.7rem;color:var(--muted);letter-spacing:1px;display:flex;align-items:center;gap:6px;}
+.meta-item span{color:var(--text);}
+.hero-tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:40px;}
+.tag{font-family:var(--mono);font-size:.6rem;color:var(--accent);border:1px solid rgba(0,229,160,.25);padding:4px 10px;border-radius:2px;letter-spacing:1px;}
+.tag.purple{color:var(--accent2);border-color:rgba(162,89,255,.25);}
+.tag.gold{color:var(--gold);border-color:rgba(255,209,102,.25);}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#000;font-family:var(--mono);font-size:.78rem;font-weight:600;padding:12px 28px;border-radius:3px;text-decoration:none;letter-spacing:1px;transition:.2s;}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,229,160,.25);}
+.btn-outline{display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--text);font-family:var(--mono);font-size:.78rem;padding:12px 28px;border-radius:3px;text-decoration:none;letter-spacing:1px;border:1px solid var(--border);transition:.2s;}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent);}
+
+.divider{height:1px;background:var(--border);}
+.content{max-width:1200px;margin:0 auto;padding:70px 6%;}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:70px;}
+.summary-card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:24px;position:relative;overflow:hidden;}
+.summary-card::before{content:'';position:absolute;bottom:0;left:0;width:100%;height:2px;background:var(--accent);}
+.summary-card.gold::before{background:var(--gold);}
+.summary-card.purple::before{background:var(--accent2);}
+.summary-label{font-family:var(--mono);font-size:.6rem;color:var(--muted);letter-spacing:2px;margin-bottom:10px;}
+.summary-value{font-family:var(--display);font-size:1.4rem;font-weight:800;color:var(--text);}
+.summary-sub{font-size:.8rem;color:var(--muted);margin-top:4px;}
+
+.section-block{margin-bottom:60px;}
+.section-label{font-family:var(--mono);color:var(--accent);font-size:.7rem;letter-spacing:4px;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.section-title{font-family:var(--display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;margin-bottom:20px;}
+.prose{color:var(--muted);font-size:.97rem;line-height:1.9;}
+.prose strong{color:var(--text);}
+.prose p{margin-bottom:14px;}
+
+.arch-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px;}
+.arch-block{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px 24px;}
+.arch-block h4{font-family:var(--mono);font-size:.72rem;color:var(--accent);letter-spacing:2px;margin-bottom:12px;}
+.arch-block ul{list-style:none;display:flex;flex-direction:column;gap:8px;}
+.arch-block ul li{font-size:.85rem;color:var(--muted);display:flex;align-items:flex-start;gap:10px;line-height:1.5;}
+.arch-block ul li::before{content:'›';color:var(--accent);flex-shrink:0;margin-top:1px;}
+
+.phases{display:flex;flex-direction:column;gap:0;margin-top:24px;position:relative;}
+.phases::before{content:'';position:absolute;left:18px;top:0;bottom:0;width:1px;background:var(--border);}
+.phase{display:flex;gap:28px;padding-bottom:32px;position:relative;}
+.phase-dot{width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.65rem;color:var(--accent);flex-shrink:0;position:relative;z-index:1;}
+.phase-body{flex:1;padding-top:6px;}
+.phase-body h4{font-family:var(--display);font-size:1rem;font-weight:700;margin-bottom:6px;}
+.phase-body p{font-size:.85rem;color:var(--muted);line-height:1.7;}
+.phase-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.phase-tag{font-family:var(--mono);font-size:.58rem;color:var(--muted);border:1px solid var(--border);padding:2px 7px;border-radius:2px;}
+
+.problem-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px;}
+.problem-card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px;}
+.problem-card h4{font-family:var(--mono);font-size:.68rem;color:rgba(255,80,80,.8);letter-spacing:1px;margin-bottom:8px;}
+.problem-card p{font-size:.83rem;color:var(--muted);line-height:1.6;}
+.solution-card{background:var(--card);border:1px solid rgba(0,229,160,.15);border-radius:6px;padding:20px;}
+.solution-card h4{font-family:var(--mono);font-size:.68rem;color:var(--accent);letter-spacing:1px;margin-bottom:8px;}
+.solution-card p{font-size:.83rem;color:var(--muted);line-height:1.6;}
+
+.tech-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:24px;}
+.tech-item{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:14px;text-align:center;}
+.tech-item .tech-name{font-family:var(--mono);font-size:.72rem;color:var(--text);display:block;margin-top:6px;}
+.tech-item .tech-role{font-family:var(--mono);font-size:.58rem;color:var(--muted);display:block;margin-top:3px;}
+
+.downloads-section{background:var(--card);border:1px solid rgba(0,229,160,.2);border-radius:8px;padding:40px;margin-top:70px;}
+.downloads-section h2{font-family:var(--display);font-size:clamp(1.4rem,3vw,2rem);font-weight:800;letter-spacing:-1px;margin-bottom:8px;}
+.downloads-section p{color:var(--muted);font-size:.9rem;margin-bottom:32px;max-width:500px;}
+.dl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+.dl-card{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:10px;transition:.2s;}
+.dl-card:hover{border-color:rgba(0,229,160,.3);}
+.dl-card-icon{font-size:1.6rem;}
+.dl-card-title{font-family:var(--display);font-size:.95rem;font-weight:700;}
+.dl-card-desc{font-size:.78rem;color:var(--muted);line-height:1.5;flex:1;}
+.dl-card-btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:.65rem;color:var(--accent);text-decoration:none;letter-spacing:1px;padding:7px 12px;border:1px solid rgba(0,229,160,.3);border-radius:2px;transition:.2s;width:fit-content;}
+.dl-card-btn:hover{background:rgba(0,229,160,.08);}
+
+.terminal{background:#080c10;border:1px solid var(--border);border-radius:6px;padding:20px 24px;font-family:var(--mono);font-size:.8rem;line-height:2;margin-top:24px;}
+.term-header{display:flex;gap:6px;margin-bottom:16px;}
+.dot{width:10px;height:10px;border-radius:50%;}
+.dot-r{background:#ff5f57;}.dot-y{background:#febc2e;}.dot-g{background:#28c840;}
+.term-line{color:var(--muted);}
+.term-line .prompt{color:var(--accent);}
+.term-line .cmd{color:var(--text);}
+.term-line .out{color:#6b8fa3;}
+.term-success{color:var(--accent);font-weight:bold;}
+.term-warn{color:var(--gold);}
+.cursor-blink{animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+
+.cta-box{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:48px;text-align:center;margin-top:70px;position:relative;overflow:hidden;}
+.cta-box::before{content:'';position:absolute;top:-50%;left:50%;transform:translateX(-50%);width:400px;height:400px;background:radial-gradient(circle,rgba(0,229,160,.04),transparent 70%);}
+.cta-box h2{font-family:var(--display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;margin-bottom:12px;}
+.cta-box p{color:var(--muted);font-size:.93rem;max-width:480px;margin:0 auto 28px;}
+.cta-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+
+footer{text-align:center;padding:32px;color:var(--muted);font-family:var(--mono);font-size:.65rem;letter-spacing:2px;border-top:1px solid var(--border);margin-top:0;}
+
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+
+@media(max-width:900px){
+  .summary-grid{grid-template-columns:1fr 1fr;}
+  .arch-grid{grid-template-columns:1fr;}
+  .problem-grid{grid-template-columns:1fr;}
+  .proj-hero h1{font-size:2.2rem;}
+  .cta-box{padding:36px 24px;}
+}
+@media(max-width:600px){
+  .summary-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="portfolio_marina.html" class="nav-logo">MPLO://sec</a>
+    <a href="portfolio_marina.html#portfolio" class="nav-back">← Volver al portfolio</a>
+  </div>
+</nav>
+
+<section class="proj-hero">
+  <div class="hero-content">
+    <span class="proj-badge">PROYECTO · GESTIÓN DE COPIA DE SEGURIDAD</span>
+    <h1>Sistema de copias de seguridad<br><span>3-2-1 con Duplicati</span></h1>
+    <div class="proj-meta">
+      <div class="meta-item">HERRAMIENTA: <span>Duplicati (cifrado, compresión, programación)</span></div>
+      <div class="meta-item">REGLAS: <span>3-2-1 (tres copias, dos soportes distintos, una fuera del sitio)</span></div>
+      <div class="meta-item">ALCANCE: <span>Active Directory (SYSVOL) · Archivos críticos</span></div>
+      <div class="meta-item">AÑO: <span>2025</span></div>
+    </div>
+    <div class="hero-tags">
+      <span class="tag">Copia completa + incremental</span>
+      <span class="tag">Cifrado AES-256</span>
+      <span class="tag purple">Almacenamiento local (2 discos)</span>
+      <span class="tag gold">Almacenamiento en la nube (Google Drive)</span>
+      <span class="tag">Restauración granular</span>
+      <span class="tag">Programación automática</span>
+    </div>
+    <div class="hero-actions">
+      <a href="#downloads" class="btn-primary">↓ Descargar memoria</a>
+      <a href="portfolio_marina.html#portfolio" class="btn-outline">← Ver más proyectos</a>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<div class="content">
+
+  <!-- Resumen rápido -->
+  <div class="summary-grid reveal">
+    <div class="summary-card">
+      <div class="summary-label">COPIA SEGURIDAD</div>
+      <div class="summary-value">3-1-1</div>
+      <div class="summary-sub">3 copias, 1 almacenamiento local + 1 externo/nube</div>
+    </div>
+    <div class="summary-card gold">
+      <div class="summary-label">CIFRADO</div>
+      <div class="summary-value">AES-256</div>
+      <div class="summary-sub">Contraseña maestra para proteger los datos</div>
+    </div>
+    <div class="summary-card purple">
+      <div class="summary-label">AUTOMATIZACIÓN</div>
+      <div class="summary-value">Programación horaria</div>
+      <div class="summary-sub">Copia completa semanal + incremental diaria</div>
+    </div>
+  </div>
+
+  <!-- Contexto -->
+  <div class="section-block reveal">
+    <div class="section-label">01_contexto</div>
+    <h2 class="section-title">Protección de la información crítica del centro educativo</h2>
+    <div class="prose">
+      <p>Para garantizar la disponibilidad e integridad de los datos del IES Camp de Morvedre, especialmente del <strong>Active Directory (carpeta SYSVOL)</strong>, se ha implementado un sistema de copias de seguridad basado en la <strong>regla 3-2-1</strong> (adaptada a 3-1-1 por limitaciones de laboratorio). Se utiliza la herramienta <strong>Duplicati</strong>, que permite copias cifradas, comprimidas, programadas y con restauración granular.</p>
+      <p>El diseño incluye tres copias de seguridad: una en un disco local (unidad E: Backup), otra en un segundo disco local (unidad F: Privado) y una tercera en la nube (Google Drive). Cada copia está protegida con contraseña y se realizan pruebas de restauración para verificar la integridad de los datos.</p>
+      <p>Además, se han definido políticas de seguridad para las copias de seguridad (cifrado, control de accesos, etiquetado, verificación periódica) alineadas con las recomendaciones de INCIBE y buenas prácticas del sector.</p>
+    </div>
+  </div>
+
+  <!-- Arquitectura del sistema de backups -->
+  <div class="section-block reveal">
+    <div class="section-label">02_arquitectura</div>
+    <h2 class="section-title">Diseño de la solución de backup</h2>
+    <div class="arch-grid">
+      <div class="arch-block">
+        <h4>POLÍTICAS DE SEGURIDAD (INCIBE)</h4>
+        <ul>
+          <li>Identificación de datos críticos: SYSVOL (Active Directory), documentación administrativa, datos de alumnos/profesores.</li>
+          <li>Frecuencia: copia completa semanal, incremental diaria.</li>
+          <li>Verificación de soportes y etiquetado (carpetas con fecha YYYY-MM-DD).</li>
+          <li>Cifrado de los datos o del disco destino.</li>
+          <li>Control de accesos: solo administradores pueden restaurar.</li>
+          <li>Pruebas de restauración periódicas.</li>
+          <li>Destrucción segura de soportes antiguos.</li>
+          <li>Documentación y concienciación.</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>DUPLICATI (HERRAMIENTA)</h4>
+        <ul>
+          <li>Interfaz web para configuración y monitorización.</li>
+          <li>Backups cifrados con contraseña maestra.</li>
+          <li>Compresión automática para ahorro de espacio.</li>
+          <li>Programación flexible (horario, días, periodicidad).</li>
+          <li>Destinos: disco local, segundo disco, Google Drive, OneDrive, etc.</li>
+          <li>Restauración granular (archivos o carpetas concretas).</li>
+          <li>Registro detallado de operaciones.</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>DESTINOS DE ALMACENAMIENTO</h4>
+        <ul>
+          <li><strong>Copia 1 (local):</strong> disco duro virtual E: (Backup) – 20 GB NTFS</li>
+          <li><strong>Copia 2 (local alternativo):</strong> disco duro virtual F: (Privado) – otro medio físico simulado</li>
+          <li><strong>Copia 3 (nube):</strong> Google Drive, carpeta "Backup-AD" – almacenamiento externo fuera del centro</li>
+          <li><strong>Cifrado:</strong> cada backup tiene su propia contraseña (almacenada en gestor de contraseñas)</li>
+          <li><strong>Programación:</strong> copias cada dos días a las 13h (disco E) y diaria a las 23h (Google Drive)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fases de implementación -->
+  <div class="section-block reveal">
+    <div class="section-label">03_implementación</div>
+    <h2 class="section-title">Proceso de implantación del sistema de backups</h2>
+    <div class="phases">
+      <div class="phase">
+        <div class="phase-dot">01</div>
+        <div class="phase-body">
+          <h4>Instalación de Duplicati en Windows Server</h4>
+          <p>Descarga del instalador desde la página oficial (duplicati.com). Ejecución del asistente de instalación. Configuración del servicio para que se inicie automáticamente. Acceso a la interfaz web (http://localhost:8200) para administración.</p>
+          <div class="phase-tags"><span class="phase-tag">Duplicati</span><span class="phase-tag">instalación</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">02</div>
+        <div class="phase-body">
+          <h4>Configuración de la primera copia de seguridad (disco E:)</h4>
+          <p>Creación de un nuevo backup con nombre "Backup-AD1". Selección de directorio destino: E:\. Cifrado con contraseña (AES-256). Selección de origen: carpeta SYSVOL (C:\Windows\SYSVOL). Programación: cada 2 días a las 13:00 (lunes, miércoles, viernes, domingo). Ejecución manual inicial y verificación de archivos generados.</p>
+          <div class="phase-tags"><span class="phase-tag">cifrado</span><span class="phase-tag">programación</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">03</div>
+        <div class="phase-body">
+          <h4>Configuración de la segunda copia de seguridad (disco F:)</h4>
+          <p>Mismos pasos que en la fase 2, pero con destino F:\ (disco "Privado"). Nombre "Backup-AD2". Mismo origen SYSVOL, misma programación (para tener redundancia local en otro disco). Verificación de la copia generada.</p>
+          <div class="phase-tags"><span class="phase-tag">redundancia</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">04</div>
+        <div class="phase-body">
+          <h4>Configuración de la tercera copia en Google Drive (nube)</h4>
+          <p>Selección de destino "Google Drive". Autenticación mediante OAuth (AuthID). Creación de carpeta "Backup-AD" en Drive. Configuración de origen: archivo de prueba (debido a limitaciones de espacio) o SYSVOL simulado. Programación diaria a las 23:00. Cifrado con contraseña diferente. Verificación de subida y archivo en Drive.</p>
+          <div class="phase-tags"><span class="phase-tag">Google Drive</span><span class="phase-tag">nube</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">05</div>
+        <div class="phase-body">
+          <h4>Pruebas de restauración (validez de los backups)</h4>
+          <p>Para cada una de las tres copias, se realiza una restauración de prueba. En Duplicati se selecciona "Restore" → "Direct Restore from Backup Files". Se elige el origen (disco o Drive), se introduce la contraseña, se selecciona el archivo/carpeta a restaurar y se elige la ubicación de destino (original o alternativa). Se verifica que la restauración sea exitosa y que los datos sean legibles.</p>
+          <div class="phase-tags"><span class="phase-tag">restauración</span><span class="phase-tag">validación</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">06</div>
+        <div class="phase-body">
+          <h4>Documentación y políticas de seguridad</h4>
+          <p>Elaboración de un documento con las políticas de backup (frecuencia, responsables, cifrado, procedimiento de restauración, pruebas periódicas). Se recomienda la realización de simulacros trimestrales de restauración completa del AD.</p>
+          <div class="phase-tags"><span class="phase-tag">políticas</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Problemas y soluciones reales -->
+  <div class="section-block reveal">
+    <div class="section-label">04_incidencias</div>
+    <h2 class="section-title">Hallazgos y medidas correctivas</h2>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <h4>HALLAZGO — Espacio insuficiente en Google Drive para SYSVOL completo</h4>
+        <p>La carpeta SYSVOL ocupaba varios GB, superando el espacio disponible en la cuenta de Google Drive utilizada en el laboratorio.</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN</h4>
+        <p>Se optó por realizar la copia de un archivo de prueba representativo, documentando que en un entorno real se usaría una cuenta con capacidad suficiente o se comprimiría/cifraría con división en partes.</p>
+      </div>
+      <div class="problem-card">
+        <h4>HALLAZGO — Autenticación OAuth para Google Drive desde Duplicati</h4>
+        <p>La primera vez, el proceso de obtención del AuthID requería aceptar permisos y copiar un código de verificación.</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN</h4>
+        <p>Se siguió el asistente de Duplicati: se hizo clic en "Google Drive (limited) login", se aceptaron los permisos y se copió el código generado automáticamente. Se documentó el proceso para futuras configuraciones.</p>
+      </div>
+      <div class="problem-card">
+        <h4>HALLAZGO — Ausencia de pruebas de restauración documentadas</h4>
+        <p>En la organización no existía un procedimiento formal para verificar que las copias eran recuperables.</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN</h4>
+        <p>Se incluyó en el plan de seguridad la obligación de realizar pruebas de restauración mensuales, con registro de resultados (RTO/RPO real). Se realizaron pruebas exitosas en las tres copias.</p>
+      </div>
+      <div class="problem-card">
+        <h4>HALLAZGO — Contraseñas de cifrado no gestionadas centralmente</h4>
+        <p>Cada backup tenía una contraseña diferente, lo que podría provocar pérdida de acceso si no se almacenaban de forma segura.</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN</h4>
+        <p>Se implementó el uso de un gestor de contraseñas (Bitwarden) para almacenar las claves de cifrado de los backups, compartido con el equipo de administración.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stack tecnológico -->
+  <div class="section-block reveal">
+    <div class="section-label">05_tecnologías</div>
+    <h2 class="section-title">Herramientas y plataformas utilizadas</h2>
+    <div class="tech-grid">
+      <div class="tech-item"><span class="tech-name">Duplicati</span><span class="tech-role">Backup cifrado y programado</span></div>
+      <div class="tech-item"><span class="tech-name">Windows Server 2025</span><span class="tech-role">Sistema anfitrión</span></div>
+      <div class="tech-item"><span class="tech-name">Google Drive</span><span class="tech-role">Almacenamiento en la nube</span></div>
+      <div class="tech-item"><span class="tech-name">NTFS</span><span class="tech-role">Sistema de archivos local</span></div>
+      <div class="tech-item"><span class="tech-name">AES-256</span><span class="tech-role">Cifrado de los backups</span></div>
+      <div class="tech-item"><span class="tech-name">OAuth 2.0</span><span class="tech-role">Autenticación para Google Drive</span></div>
+    </div>
+  </div>
+
+  <!-- Bloque de descargas -->
+  <div class="downloads-section reveal" id="downloads">
+    <h2>📄 Memoria de la práctica</h2>
+    <p>Documento completo con la implementación de Duplicati, políticas de backup y pruebas de restauración.</p>
+    <div class="dl-grid">
+      <div class="dl-card">
+        <div class="dl-card-icon">💾</div>
+        <div class="dl-card-title">Copias de seguridad con Duplicati (3-2-1)</div>
+        <div class="dl-card-desc">Instalación, configuración de tres destinos (dos discos locales + Google Drive), cifrado, programación y pruebas de restauración. Políticas de seguridad según INCIBE.</div>
+        <a href="docs/Copias_Seguridad_Duplicati.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+    </div>
+    <p style="margin-top:24px; font-size:.75rem; color:var(--muted); text-align:center;">📌 El PDF debe ubicarse en la carpeta <code>docs/</code> con el nombre mostrado. Ajusta la ruta si es necesario.</p>
+  </div>
+
+  <!-- Terminal de conclusiones -->
+  <div class="section-block reveal">
+    <div class="section-label">06_conclusiones</div>
+    <h2 class="section-title">Resultados y lecciones aprendidas</h2>
+    <div class="terminal">
+      <div class="term-header"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+      <div class="term-line"><span class="prompt">marina@backups:~$</span> <span class="cmd">./validate_backup_strategy.sh</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Tres copias de seguridad configuradas (dos locales + nube).</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Cifrado AES-256 con contraseña maestra en cada destino.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Programación automática: copia completa semanal e incremental diaria.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Pruebas de restauración exitosas en los tres destinos.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Políticas de backup documentadas según recomendaciones de INCIBE.</span></div>
+      <div class="term-line"><span class="term-warn">[ MEJORA ] Implementar backup automático de toda la partición del sistema.</span></div>
+      <div class="term-line"><span class="term-warn">[ MEJORA ] Realizar simulacros de restauración completos trimestralmente.</span></div>
+      <div class="term-line"><span class="prompt">marina@backups:~$</span> <span class="cmd">echo "Sistema de copias de seguridad 3-2-1 operativo y verificado"</span></div>
+      <div class="term-line"><span class="term-success">Sistema de copias de seguridad 3-2-1 operativo y verificado</span></div>
+      <div class="term-line"><span class="prompt">marina@backups:~$ <span class="cursor-blink">▊</span></span></div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-box reveal">
+    <h2>¿Necesitas implementar un sistema de copias de seguridad 3-2-1?</h2>
+    <p>Este proyecto demuestra que domino la implantación de backups cifrados, automatizados y con verificación de restauración, siguiendo las mejores prácticas (INCIBE, regla 3-2-1). Contacta conmigo para diseñar una estrategia de backup adaptada a tu organización.</p>
+    <div class="cta-actions">
+      <a href="portfolio_marina.html#contact" class="btn-primary">→ Contactar</a>
+      <a href="portfolio_marina.html#portfolio" class="btn-outline">← Volver al portfolio</a>
+    </div>
+  </div>
+
+</div>
+
+<footer>MARINA DEL PILAR LÓPEZ OLIVA // COPIAS DE SEGURIDAD 3-2-1 CON DUPLICATI // 2025</footer>
+
+<script>
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

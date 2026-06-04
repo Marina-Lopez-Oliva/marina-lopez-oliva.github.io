@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hardening Ubuntu Server · SSH, AppArmor, cifrado LUKS y auditoría Lynis | Marina del Pilar López Oliva</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Fira+Code:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#06080c;--surface:#0e1117;--card:#131821;
+  --accent:#00e5a0; --accent2:#a259ff; --gold:#ffd166;
+  --red:#ff6b6b; --fire:#ff9a3c;
+  --text:#eef0f5; --muted:#6b7280; --border:#1e2530;
+  --mono:'Fira Code',monospace; --display:'Syne',sans-serif; --body:'DM Sans',sans-serif;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--body);overflow-x:hidden;line-height:1.6;}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--accent);border-radius:2px;}
+
+nav{position:fixed;top:0;width:100%;z-index:100;background:rgba(6,8,12,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 6%;}
+.nav-inner{display:flex;justify-content:space-between;align-items:center;}
+.nav-logo{font-family:var(--mono);color:var(--accent);font-size:.85rem;letter-spacing:2px;text-decoration:none;}
+.nav-back{font-family:var(--mono);font-size:.7rem;color:var(--muted);text-decoration:none;letter-spacing:1px;transition:.2s;display:flex;align-items:center;gap:8px;}
+.nav-back:hover{color:var(--accent);}
+
+.proj-hero{min-height:55vh;display:flex;flex-direction:column;justify-content:flex-end;padding:120px 6% 60px;position:relative;overflow:hidden;}
+.proj-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 30% 50%,rgba(0,229,160,.06),transparent);}
+.proj-hero::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 50% 40% at 80% 50%,rgba(162,89,255,.04),transparent);}
+.hero-content{position:relative;z-index:1;max-width:1200px;margin:0 auto;width:100%;}
+.proj-badge{font-family:var(--mono);font-size:.65rem;color:var(--accent);border:1px solid rgba(0,229,160,.3);padding:5px 14px;border-radius:2px;letter-spacing:2px;display:inline-block;margin-bottom:20px;background:rgba(0,229,160,.06);}
+.proj-hero h1{font-family:var(--display);font-size:clamp(2.2rem,6vw,5rem);font-weight:800;letter-spacing:-2px;line-height:.95;margin-bottom:20px;}
+.proj-hero h1 span{color:var(--accent);}
+.proj-meta{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:32px;}
+.meta-item{font-family:var(--mono);font-size:.7rem;color:var(--muted);letter-spacing:1px;display:flex;align-items:center;gap:6px;}
+.meta-item span{color:var(--text);}
+.hero-tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:40px;}
+.tag{font-family:var(--mono);font-size:.6rem;color:var(--accent);border:1px solid rgba(0,229,160,.25);padding:4px 10px;border-radius:2px;letter-spacing:1px;}
+.tag.purple{color:var(--accent2);border-color:rgba(162,89,255,.25);}
+.tag.gold{color:var(--gold);border-color:rgba(255,209,102,.25);}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#000;font-family:var(--mono);font-size:.78rem;font-weight:600;padding:12px 28px;border-radius:3px;text-decoration:none;letter-spacing:1px;transition:.2s;}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,229,160,.25);}
+.btn-outline{display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--text);font-family:var(--mono);font-size:.78rem;padding:12px 28px;border-radius:3px;text-decoration:none;letter-spacing:1px;border:1px solid var(--border);transition:.2s;}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent);}
+
+.divider{height:1px;background:var(--border);}
+.content{max-width:1200px;margin:0 auto;padding:70px 6%;}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:70px;}
+.summary-card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:24px;position:relative;overflow:hidden;}
+.summary-card::before{content:'';position:absolute;bottom:0;left:0;width:100%;height:2px;background:var(--accent);}
+.summary-card.gold::before{background:var(--gold);}
+.summary-card.purple::before{background:var(--accent2);}
+.summary-label{font-family:var(--mono);font-size:.6rem;color:var(--muted);letter-spacing:2px;margin-bottom:10px;}
+.summary-value{font-family:var(--display);font-size:1.4rem;font-weight:800;color:var(--text);}
+.summary-sub{font-size:.8rem;color:var(--muted);margin-top:4px;}
+
+.section-block{margin-bottom:60px;}
+.section-label{font-family:var(--mono);color:var(--accent);font-size:.7rem;letter-spacing:4px;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.section-title{font-family:var(--display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;margin-bottom:20px;}
+.prose{color:var(--muted);font-size:.97rem;line-height:1.9;}
+.prose strong{color:var(--text);}
+.prose p{margin-bottom:14px;}
+
+.arch-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px;}
+.arch-block{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px 24px;}
+.arch-block h4{font-family:var(--mono);font-size:.72rem;color:var(--accent);letter-spacing:2px;margin-bottom:12px;}
+.arch-block ul{list-style:none;display:flex;flex-direction:column;gap:8px;}
+.arch-block ul li{font-size:.85rem;color:var(--muted);display:flex;align-items:flex-start;gap:10px;line-height:1.5;}
+.arch-block ul li::before{content:'›';color:var(--accent);flex-shrink:0;margin-top:1px;}
+
+.phases{display:flex;flex-direction:column;gap:0;margin-top:24px;position:relative;}
+.phases::before{content:'';position:absolute;left:18px;top:0;bottom:0;width:1px;background:var(--border);}
+.phase{display:flex;gap:28px;padding-bottom:32px;position:relative;}
+.phase-dot{width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.65rem;color:var(--accent);flex-shrink:0;position:relative;z-index:1;}
+.phase-body{flex:1;padding-top:6px;}
+.phase-body h4{font-family:var(--display);font-size:1rem;font-weight:700;margin-bottom:6px;}
+.phase-body p{font-size:.85rem;color:var(--muted);line-height:1.7;}
+.phase-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.phase-tag{font-family:var(--mono);font-size:.58rem;color:var(--muted);border:1px solid var(--border);padding:2px 7px;border-radius:2px;}
+
+.problem-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px;}
+.problem-card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px;}
+.problem-card h4{font-family:var(--mono);font-size:.68rem;color:rgba(255,80,80,.8);letter-spacing:1px;margin-bottom:8px;}
+.problem-card p{font-size:.83rem;color:var(--muted);line-height:1.6;}
+.solution-card{background:var(--card);border:1px solid rgba(0,229,160,.15);border-radius:6px;padding:20px;}
+.solution-card h4{font-family:var(--mono);font-size:.68rem;color:var(--accent);letter-spacing:1px;margin-bottom:8px;}
+.solution-card p{font-size:.83rem;color:var(--muted);line-height:1.6;}
+
+.tech-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:24px;}
+.tech-item{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:14px;text-align:center;}
+.tech-item .tech-name{font-family:var(--mono);font-size:.72rem;color:var(--text);display:block;margin-top:6px;}
+.tech-item .tech-role{font-family:var(--mono);font-size:.58rem;color:var(--muted);display:block;margin-top:3px;}
+
+.downloads-section{background:var(--card);border:1px solid rgba(0,229,160,.2);border-radius:8px;padding:40px;margin-top:70px;}
+.downloads-section h2{font-family:var(--display);font-size:clamp(1.4rem,3vw,2rem);font-weight:800;letter-spacing:-1px;margin-bottom:8px;}
+.downloads-section p{color:var(--muted);font-size:.9rem;margin-bottom:32px;max-width:500px;}
+.dl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+.dl-card{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:10px;transition:.2s;}
+.dl-card:hover{border-color:rgba(0,229,160,.3);}
+.dl-card-icon{font-size:1.6rem;}
+.dl-card-title{font-family:var(--display);font-size:.95rem;font-weight:700;}
+.dl-card-desc{font-size:.78rem;color:var(--muted);line-height:1.5;flex:1;}
+.dl-card-btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:.65rem;color:var(--accent);text-decoration:none;letter-spacing:1px;padding:7px 12px;border:1px solid rgba(0,229,160,.3);border-radius:2px;transition:.2s;width:fit-content;}
+.dl-card-btn:hover{background:rgba(0,229,160,.08);}
+
+.terminal{background:#080c10;border:1px solid var(--border);border-radius:6px;padding:20px 24px;font-family:var(--mono);font-size:.8rem;line-height:2;margin-top:24px;}
+.term-header{display:flex;gap:6px;margin-bottom:16px;}
+.dot{width:10px;height:10px;border-radius:50%;}
+.dot-r{background:#ff5f57;}.dot-y{background:#febc2e;}.dot-g{background:#28c840;}
+.term-line{color:var(--muted);}
+.term-line .prompt{color:var(--accent);}
+.term-line .cmd{color:var(--text);}
+.term-line .out{color:#6b8fa3;}
+.term-success{color:var(--accent);font-weight:bold;}
+.term-warn{color:var(--gold);}
+.cursor-blink{animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+
+.cta-box{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:48px;text-align:center;margin-top:70px;position:relative;overflow:hidden;}
+.cta-box::before{content:'';position:absolute;top:-50%;left:50%;transform:translateX(-50%);width:400px;height:400px;background:radial-gradient(circle,rgba(0,229,160,.04),transparent 70%);}
+.cta-box h2{font-family:var(--display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;margin-bottom:12px;}
+.cta-box p{color:var(--muted);font-size:.93rem;max-width:480px;margin:0 auto 28px;}
+.cta-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+
+footer{text-align:center;padding:32px;color:var(--muted);font-family:var(--mono);font-size:.65rem;letter-spacing:2px;border-top:1px solid var(--border);margin-top:0;}
+
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+
+@media(max-width:900px){
+  .summary-grid{grid-template-columns:1fr 1fr;}
+  .arch-grid{grid-template-columns:1fr;}
+  .problem-grid{grid-template-columns:1fr;}
+  .proj-hero h1{font-size:2.2rem;}
+  .cta-box{padding:36px 24px;}
+}
+@media(max-width:600px){
+  .summary-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="portfolio_marina.html" class="nav-logo">MPLO://sec</a>
+    <a href="portfolio_marina.html#portfolio" class="nav-back">← Volver al portfolio</a>
+  </div>
+</nav>
+
+<section class="proj-hero">
+  <div class="hero-content">
+    <span class="proj-badge">PROYECTO INTEGRADOR · 6 PRÁCTICAS</span>
+    <h1>Hardening de Ubuntu Server<br><span>SSH, AppArmor, cifrado LUKS y auditoría Lynis</span></h1>
+    <div class="proj-meta">
+      <div class="meta-item">SISTEMA: <span>Ubuntu Server 24.04 (servidor web Apache)</span></div>
+      <div class="meta-item">SEGURIDAD: <span>SSH hardening · AppArmor · Lynis · LUKS</span></div>
+      <div class="meta-item">AUTENTICACIÓN: <span>2FA (Google Authenticator) · fail2ban</span></div>
+      <div class="meta-item">AÑO: <span>2025-2026</span></div>
+    </div>
+    <div class="hero-tags">
+      <span class="tag">Autenticación por certificado</span>
+      <span class="tag">2FA con Google Authenticator</span>
+      <span class="tag">fail2ban</span>
+      <span class="tag purple">AppArmor</span>
+      <span class="tag">Lynis (hardening index 58→66)</span>
+      <span class="tag gold">Cifrado LUKS</span>
+      <span class="tag">Desbloqueo remoto (dropbear)</span>
+    </div>
+    <div class="hero-actions">
+      <a href="#downloads" class="btn-primary">↓ Descargar memorias</a>
+      <a href="portfolio_marina.html#portfolio" class="btn-outline">← Ver más proyectos</a>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<div class="content">
+
+  <!-- Resumen rápido -->
+  <div class="summary-grid reveal">
+    <div class="summary-card">
+      <div class="summary-label">PRÁCTICAS AGRUPADAS</div>
+      <div class="summary-value">6</div>
+      <div class="summary-sub">SSH · AppArmor · Lynis · GRUB · LUKS · Políticas contraseñas</div>
+    </div>
+    <div class="summary-card gold">
+      <div class="summary-label">HARDENING INDEX (LYNIS)</div>
+      <div class="summary-value">58 → 66</div>
+      <div class="summary-sub">+8 puntos tras implementaciones</div>
+    </div>
+    <div class="summary-card purple">
+      <div class="summary-label">CIFRADO</div>
+      <div class="summary-value">LUKS + LVM</div>
+      <div class="summary-sub">Particiones /boot, /, /home · Desbloqueo remoto</div>
+    </div>
+  </div>
+
+  <!-- Contexto -->
+  <div class="section-block reveal">
+    <div class="section-label">01_contexto</div>
+    <h2 class="section-title">Fortificación completa de un servidor web Ubuntu</h2>
+    <div class="prose">
+      <p>El proyecto agrupa todas las prácticas de hardening realizadas sobre <strong>Ubuntu Server 24.04</strong> en su rol de servidor web (Apache2) para el IES Camp de Morvedre. El objetivo ha sido auditar y mejorar la seguridad del sistema mediante la herramienta Lynis, endurecer el servicio SSH (autenticación por certificado, 2FA, fail2ban), enjaular procesos con AppArmor, proteger el gestor de arranque GRUB, cifrar el disco completo con LUKS (incluyendo desbloqueo remoto con dropbear) y configurar políticas de contraseñas robustas siguiendo estándares NIST y CIS.</p>
+      <p>Las implementaciones han elevado el hardening index de Lynis de 58 a 66, eliminando advertencias críticas y reduciendo la superficie de ataque del servidor.</p>
+    </div>
+  </div>
+
+  <!-- Arquitectura del hardening -->
+  <div class="section-block reveal">
+    <div class="section-label">02_arquitectura</div>
+    <h2 class="section-title">Capas de seguridad aplicadas</h2>
+    <div class="arch-grid">
+      <div class="arch-block">
+        <h4>SERVICIO SSH (HARDENING)</h4>
+        <ul>
+          <li>Autenticación exclusiva con certificados RSA 4096 bits (clave pública/privada)</li>
+          <li>Deshabilitado acceso root y autenticación por contraseña</li>
+          <li>2FA con Google Authenticator (TOTP) + excepción por grupo (dep_informatica)</li>
+          <li>fail2ban: 3 intentos fallidos → bloqueo 3600 segundos</li>
+          <li>Configuración de algoritmos seguros: Ciphers, MACs, KexAlgorithms (SHA2-512/256)</li>
+          <li>Banner personalizado de advertencia legal</li>
+          <li>Timeout de sesión (30 min) y bloqueo por inactividad (5 min)</li>
+          <li>Logging detallado a /var/log/auth.log y análisis con lnav</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>APARMOR (ENJAULAMIENTO DE PROCESOS)</h4>
+        <ul>
+          <li>Perfil personalizado para /usr/sbin/apache2 en modo Enforce</li>
+          <li>Reglas de acceso: lectura permitida en /var/www/Publico/**</li>
+          <li>Deny explícito para /var/www/Privado/** (bloqueo desde kernel)</li>
+          <li>Resolución de conflictos iniciales (logs, librerías mod_ssl)</li>
+          <li>Comprobación mediante curl: acceso a Publico OK, a Privado bloqueado (403)</li>
+          <li>Logs de denegación en /var/log/kern.log</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>CIFRADO LUKS + LVM Y DESBLOQUEO REMOTO</h4>
+        <ul>
+          <li>Instalación de Ubuntu Server con particiones cifradas LUKS</li>
+          <li>Esquema de particiones: /boot/efi (FAT32), /boot (ext4), LUKS container con LVM</li>
+          <li>Volúmenes LVM: ubuntu--vg-lv--0 (/), ubuntu--vg-lv--1 (swap), ubuntu--vg-lv--2 (/home)</li>
+          <li>Desbloqueo remoto con dropbear: SSH ligero en initramfs, puerto 6545</li>
+          <li>Claves SSH para autenticación, comando cryptroot-unlock</li>
+          <li>Verificación de inaccesibilidad de datos sin clave (prueba con Ubuntu Live)</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>AUDITORÍA, GRUB Y POLÍTICAS DE CONTRASEÑAS</h4>
+        <ul>
+          <li>Auditoría con Lynis: identificación de 51 sugerencias, corrección de warnings (firewall, paquetes vulnerables, GRUB)</li>
+          <li>Protección de GRUB: contraseña para editar menú, hash de contraseña, permisos mínimos en archivos de arranque</li>
+          <li>Políticas de contraseñas en PAM: pwquality (longitud 15, 4 clases, difok=5, gecoscheck, badwords)</li>
+          <li>Caducidad en login.defs: 90 días máximo, 1 día mínimo, aviso 7 días</li>
+          <li>Bloqueo de cuenta con pam_tally2: 5 fallos → bloqueo 60 minutos</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fases de implementación -->
+  <div class="section-block reveal">
+    <div class="section-label">03_implementación</div>
+    <h2 class="section-title">Fases del proyecto de hardening en Ubuntu</h2>
+    <div class="phases">
+      <div class="phase">
+        <div class="phase-dot">01</div>
+        <div class="phase-body">
+          <h4>Hardening del servicio SSH</h4>
+          <p>Generación de claves RSA 4096 bits en clientes Linux y Windows (ssh-keygen, PuTTYgen). Configuración de sshd_config: PermitRootLogin no, PasswordAuthentication no, PubkeyAuthentication yes, Protocol 2, AllowUsers admin@IP. Implementación de 2FA con libpam-google-authenticator y excepción por grupo. Instalación de fail2ban con jail específico. Configuración de algoritmos seguros (Ciphers, MACs, KexAlgorithms) y timeout de sesión.</p>
+          <div class="phase-tags"><span class="phase-tag">ssh-keygen</span><span class="phase-tag">2FA</span><span class="phase-tag">fail2ban</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">02</div>
+        <div class="phase-body">
+          <h4>Auditoría inicial con Lynis y análisis de logs con lnav</h4>
+          <p>Ejecución de Lynis: hardening index 58, 51 sugerencias, warnings críticos (FIRE-4512: iptables sin reglas, PKGS-7392: paquetes vulnerables, BOOT-5122: GRUB sin contraseña). Análisis de /var/log/auth.log con lnav, filtrado de eventos sshd, detección de intentos de acceso fallidos y reconstrucción de línea temporal de accesos exitosos.</p>
+          <div class="phase-tags"><span class="phase-tag">Lynis</span><span class="phase-tag">lnav</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">03</div>
+        <div class="phase-body">
+          <h4>Corrección de advertencias y mejora del hardening index</h4>
+          <p>Configuración de firewall básico con ufw (reglas por defecto deny incoming, allow outgoing). Actualización de paquetes vulnerables (apt upgrade). Protección de GRUB con contraseña (grub-mkpasswd-pbkdf2). Ajuste de umask a 027 en /etc/login.defs. Verificación de mejoras: hardening index sube a 66, desaparecen warnings críticos.</p>
+          <div class="phase-tags"><span class="phase-tag">ufw</span><span class="phase-tag">GRUB</span><span class="phase-tag">umask</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">04</div>
+        <div class="phase-body">
+          <h4>AppArmor: enjaulamiento de Apache2</h4>
+          <p>Creación de estructura /var/www/Publico/ y /var/www/Privado/. Generación de perfil para /usr/sbin/apache2 con aa-genprof. Edición manual del perfil añadiendo deny /var/www/Privado/** r. Carga del perfil en modo Enforce. Pruebas de acceso: curl a Publico → OK, curl a Privado → bloqueado (403). Verificación de logs de denegación en kern.log.</p>
+          <div class="phase-tags"><span class="phase-tag">AppArmor</span><span class="phase-tag">aa-genprof</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">05</div>
+        <div class="phase-body">
+          <h4>Instalación con cifrado LUKS y desbloqueo remoto</h4>
+          <p>Máquina virtual con UEFI y TPM simulado. Instalación de Ubuntu Server con particiones: /boot/efi (100 MB FAT32), /boot (2 GB ext4), y el resto como volumen físico LUKS. Configuración de LVM sobre el contenedor cifrado: volúmenes para /, swap y /home. Instalación de dropbear en initramfs, configuración de IP estática, claves SSH, puerto 6545. Prueba de desbloqueo remoto con cryptroot-unlock.</p>
+          <div class="phase-tags"><span class="phase-tag">LUKS</span><span class="phase-tag">LVM</span><span class="phase-tag">dropbear</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">06</div>
+        <div class="phase-body">
+          <h4>Políticas de contraseñas y gestión de usuarios</h4>
+          <p>Configuración de pwquality.conf: minlen=15, minclass=4, difok=5, gecoscheck, badwords. Edición de common-password para usar pam_pwquality.so y pam_pwhistory.so (últimas 5 contraseñas). Configuración de login.defs: PASS_MAX_DAYS 90, PASS_MIN_DAYS 1, PASS_WARN_AGE 7. Bloqueo de cuenta con pam_tally2 (deny=5, unlock_time=3600). Pruebas de cambio de contraseña y verificación de bloqueo.</p>
+          <div class="phase-tags"><span class="phase-tag">PAM</span><span class="phase-tag">pwquality</span><span class="phase-tag">pam_tally2</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Problemas y soluciones reales -->
+  <div class="section-block reveal">
+    <div class="section-label">04_incidencias</div>
+    <h2 class="section-title">Hallazgos críticos y medidas correctivas</h2>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <h4>HALLAZGO — Firewall sin reglas activas (FIRE-4512)</h4>
+        <p>Lynis detectó módulos iptables cargados pero sin reglas, exponiendo todos los puertos del servidor.</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN</h4>
+        <p>Configuración de ufw con políticas por defecto: deny incoming, allow outgoing. Reglas específicas para puertos SSH (22445), HTTP (80), HTTPS (443).</p>
+      </div>
+      <div class="problem-card">
+        <h4>HALLAZGO — Paquetes vulnerables (PKGS-7392)</h4>
+        <p>Apache2 y librerías del sistema con vulnerabilidades conocidas sin parchear.</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN</h4>
+        <p>Ejecución de apt update && apt upgrade -y. Verificación con Lynis de que ya no aparecen paquetes vulnerables.</p>
+      </div>
+      <div class="problem-card">
+        <h4>HALLAZGO — GRUB sin protección (BOOT-5122)</h4>
+        <p>Cualquier usuario con acceso físico podía editar parámetros de arranque o acceder al modo recovery sin autenticación.</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN</h4>
+        <p>Generación de hash de contraseña con grub-mkpasswd-pbkdf2. Adición de superusers y password_pbkdf2 en /etc/grub.d/40_custom. Actualización de GRUB y verificación de protección.</p>
+      </div>
+      <div class="problem-card">
+        <h4>HALLAZGO — Apache2 podía leer directorios privados</h4>
+        <p>Sin AppArmor, cualquier vulnerabilidad en Apache permitiría acceder a archivos confidenciales fuera del directorio público.</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN</h4>
+        <p>Creación de perfil AppArmor para apache2 con reglas deny específicas para /var/www/Privado/. Carga en modo Enforce y verificación de bloqueo.</p>
+      </div>
+      <div class="problem-card">
+        <h4>HALLAZGO — Disco sin cifrar (riesgo de extracción física)</h4>
+        <p>Un atacante con acceso físico podía extraer el disco y leer todos los datos del servidor.</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN</h4>
+        <p>Reinstalación con cifrado LUKS completo (excepto /boot). Configuración de desbloqueo remoto con dropbear para evitar intervención física.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stack tecnológico -->
+  <div class="section-block reveal">
+    <div class="section-label">05_tecnologías</div>
+    <h2 class="section-title">Herramientas y plataformas utilizadas</h2>
+    <div class="tech-grid">
+      <div class="tech-item"><span class="tech-name">Ubuntu Server 24.04</span><span class="tech-role">Sistema base</span></div>
+      <div class="tech-item"><span class="tech-name">OpenSSH</span><span class="tech-role">Servicio SSH</span></div>
+      <div class="tech-item"><span class="tech-name">Google Authenticator (PAM)</span><span class="tech-role">2FA</span></div>
+      <div class="tech-item"><span class="tech-name">fail2ban</span><span class="tech-role">Prevención de fuerza bruta</span></div>
+      <div class="tech-item"><span class="tech-name">AppArmor</span><span class="tech-role">MAC (enjaulamiento)</span></div>
+      <div class="tech-item"><span class="tech-name">Lynis</span><span class="tech-role">Auditoría de seguridad</span></div>
+      <div class="tech-item"><span class="tech-name">lnav</span><span class="tech-role">Visualización de logs</span></div>
+      <div class="tech-item"><span class="tech-name">LUKS + LVM</span><span class="tech-role">Cifrado de disco</span></div>
+      <div class="tech-item"><span class="tech-name">dropbear</span><span class="tech-role">Desbloqueo remoto</span></div>
+      <div class="tech-item"><span class="tech-name">GRUB 2</span><span class="tech-role">Gestor de arranque</span></div>
+      <div class="tech-item"><span class="tech-name">PAM (pwquality, tally2)</span><span class="tech-role">Políticas de contraseñas</span></div>
+    </div>
+  </div>
+
+  <!-- Bloque de descargas (6 PDFs) -->
+  <div class="downloads-section reveal" id="downloads">
+    <h2>📄 Memorias completas de las prácticas</h2>
+    <p>Cada práctica está documentada con su propio PDF, incluyendo capturas, configuraciones y análisis de seguridad.</p>
+    <div class="dl-grid">
+      <div class="dl-card">
+        <div class="dl-card-icon">🔐</div>
+        <div class="dl-card-title">Hardening SSH (certificados, 2FA, fail2ban)</div>
+        <div class="dl-card-desc">Autenticación con certificados, 2FA con Google Authenticator, fail2ban, algoritmos seguros, logging con lnav, auditoría ssh-audit.</div>
+        <a href="docs/Hardening_Ubuntu_SSH.pdf" class="dl-card-btn" download>↓ Descargar PDF securización SSH</a>
+        <a href="docs/SSH_GoogleAuthenticator.pdf" class="dl-card-btn" download>↓ Descargar PDF autenticación SSH Google Authenticator</a>
+        <a href="docs/SSH_AutenticacionBiometrica.pdf" class="dl-card-btn" download>↓ Descargar PDF autenticación SSH por biométrica</a>       
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">🛡️</div>
+        <div class="dl-card-title">AppArmor (enjaulamiento de Apache)</div>
+        <div class="dl-card-desc">Creación de perfiles, generación con aa-genprof, modo Enforce, denegación de acceso a directorios privados, verificación de logs.</div>
+        <a href="docs/Hardening_Ubuntu_AppArmor.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">📊</div>
+        <div class="dl-card-title">Auditoría con Lynis (inicial y final)</div>
+        <div class="dl-card-desc">Análisis inicial (hardening index 58, 51 sugerencias), corrección de warnings (firewall, paquetes, GRUB), mejora a índice 66.</div>
+        <a href="docs/Hardening_Ubuntu_Lynis.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">🔒</div>
+        <div class="dl-card-title">Cifrado LUKS + LVM y desbloqueo remoto</div>
+        <div class="dl-card-desc">Instalación con particiones cifradas, esquema de volúmenes LVM, configuración de dropbear, desbloqueo remoto con cryptroot-unlock.</div>
+        <a href="docs/Hardening_Ubuntu_LUKS.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">⚙️</div>
+        <div class="dl-card-title">Protección de GRUB y política de contraseñas</div>
+        <div class="dl-card-desc">Contraseña para GRUB, permisos de archivos de arranque, configuración de pwquality, pam_tally2, caducidad en login.defs.</div>
+        <a href="docs/Hardening_Ubuntu_GRUB_Password.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+    </div>
+    <p style="margin-top:24px; font-size:.75rem; color:var(--muted); text-align:center;">📌 Los PDFs deben ubicarse en la carpeta <code>docs/</code> con los nombres mostrados. Ajusta las rutas según tu estructura real.</p>
+  </div>
+
+  <!-- Terminal de conclusiones -->
+  <div class="section-block reveal">
+    <div class="section-label">06_conclusiones</div>
+    <h2 class="section-title">Resultados y métricas de seguridad</h2>
+    <div class="terminal">
+      <div class="term-header"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+      <div class="term-line"><span class="prompt">marina@hardening-ubuntu:~$</span> <span class="cmd">./evaluate_hardening.sh --target webserver</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] SSH: autenticación por certificado, 2FA, fail2ban activo, algoritmos seguros.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] AppArmor: perfil de apache2 en modo Enforce, acceso a /Privado denegado.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Lynis: hardening index 58 → 66, eliminados warnings críticos.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Cifrado LUKS completo con LVM + desbloqueo remoto por dropbear.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] GRUB protegido con contraseña hash y permisos mínimos.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Políticas de contraseñas: minlen=15, 4 clases, caducidad 90 días, bloqueo 5 fallos.</span></div>
+      <div class="term-line"><span class="term-warn">[ MEJORA ] Automatizar auditorías periódicas con Lynis y reporte centralizado.</span></div>
+      <div class="term-line"><span class="term-warn">[ MEJORA ] Integrar logs de autenticación con SIEM (Wazuh).</span></div>
+      <div class="term-line"><span class="prompt">marina@hardening-ubuntu:~$</span> <span class="cmd">echo "Hardening de Ubuntu Server completado según estándares CIS y NIST"</span></div>
+      <div class="term-line"><span class="term-success">Hardening de Ubuntu Server completado según estándares CIS y NIST</span></div>
+      <div class="term-line"><span class="prompt">marina@hardening-ubuntu:~$ <span class="cursor-blink">▊</span></span></div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-box reveal">
+    <h2>¿Necesitas fortificar un servidor Ubuntu?</h2>
+    <p>Este proyecto demuestra que domino el hardening completo de Ubuntu Server: desde la auditoría con Lynis, pasando por el endurecimiento de SSH con 2FA y fail2ban, el enjaulamiento de procesos con AppArmor, el cifrado LUKS y las políticas de contraseñas robustas. Contacta conmigo para implementar una estrategia de seguridad similar en tu organización.</p>
+    <div class="cta-actions">
+      <a href="portfolio_marina.html#contact" class="btn-primary">→ Contactar</a>
+      <a href="portfolio_marina.html#portfolio" class="btn-outline">← Volver al portfolio</a>
+    </div>
+  </div>
+
+</div>
+
+<footer>MARINA DEL PILAR LÓPEZ OLIVA // HARDENING UBUNTU SERVER // 2025-2026</footer>
+
+<script>
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

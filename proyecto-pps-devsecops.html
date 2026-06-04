@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Puesta en producción segura · DevSecOps, SAST, hardening y pipeline CI/CD | Marina del Pilar López Oliva</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Fira+Code:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#06080c;--surface:#0e1117;--card:#131821;
+  --accent:#00e5a0; --accent2:#a259ff; --gold:#ffd166;
+  --blue:#7eb8ff; --fire:#ff9a3c;
+  --text:#eef0f5; --muted:#6b7280; --border:#1e2530;
+  --mono:'Fira Code',monospace; --display:'Syne',sans-serif; --body:'DM Sans',sans-serif;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--body);overflow-x:hidden;line-height:1.6;}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--accent);border-radius:2px;}
+
+nav{position:fixed;top:0;width:100%;z-index:100;background:rgba(6,8,12,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 6%;}
+.nav-inner{display:flex;justify-content:space-between;align-items:center;}
+.nav-logo{font-family:var(--mono);color:var(--accent);font-size:.85rem;letter-spacing:2px;text-decoration:none;}
+.nav-back{font-family:var(--mono);font-size:.7rem;color:var(--muted);text-decoration:none;letter-spacing:1px;transition:.2s;display:flex;align-items:center;gap:8px;}
+.nav-back:hover{color:var(--accent);}
+
+.proj-hero{min-height:55vh;display:flex;flex-direction:column;justify-content:flex-end;padding:120px 6% 60px;position:relative;overflow:hidden;}
+.proj-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 30% 50%,rgba(0,229,160,.06),transparent);}
+.proj-hero::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 50% 40% at 80% 50%,rgba(162,89,255,.04),transparent);}
+.hero-content{position:relative;z-index:1;max-width:1200px;margin:0 auto;width:100%;}
+.proj-badge{font-family:var(--mono);font-size:.65rem;color:var(--accent);border:1px solid rgba(0,229,160,.3);padding:5px 14px;border-radius:2px;letter-spacing:2px;display:inline-block;margin-bottom:20px;background:rgba(0,229,160,.06);}
+.proj-hero h1{font-family:var(--display);font-size:clamp(2.2rem,6vw,5rem);font-weight:800;letter-spacing:-2px;line-height:.95;margin-bottom:20px;}
+.proj-hero h1 span{color:var(--accent);}
+.proj-meta{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:32px;}
+.meta-item{font-family:var(--mono);font-size:.7rem;color:var(--muted);letter-spacing:1px;display:flex;align-items:center;gap:6px;}
+.meta-item span{color:var(--text);}
+.hero-tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:40px;}
+.tag{font-family:var(--mono);font-size:.6rem;color:var(--accent);border:1px solid rgba(0,229,160,.25);padding:4px 10px;border-radius:2px;letter-spacing:1px;}
+.tag.purple{color:var(--accent2);border-color:rgba(162,89,255,.25);}
+.tag.gold{color:var(--gold);border-color:rgba(255,209,102,.25);}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#000;font-family:var(--mono);font-size:.78rem;font-weight:600;padding:12px 28px;border-radius:3px;text-decoration:none;letter-spacing:1px;transition:.2s;}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,229,160,.25);}
+.btn-outline{display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--text);font-family:var(--mono);font-size:.78rem;padding:12px 28px;border-radius:3px;text-decoration:none;letter-spacing:1px;border:1px solid var(--border);transition:.2s;}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent);}
+
+.divider{height:1px;background:var(--border);}
+.content{max-width:1200px;margin:0 auto;padding:70px 6%;}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:70px;}
+.summary-card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:24px;position:relative;overflow:hidden;}
+.summary-card::before{content:'';position:absolute;bottom:0;left:0;width:100%;height:2px;background:var(--accent);}
+.summary-card.gold::before{background:var(--gold);}
+.summary-card.purple::before{background:var(--accent2);}
+.summary-label{font-family:var(--mono);font-size:.6rem;color:var(--muted);letter-spacing:2px;margin-bottom:10px;}
+.summary-value{font-family:var(--display);font-size:1.4rem;font-weight:800;color:var(--text);}
+.summary-sub{font-size:.8rem;color:var(--muted);margin-top:4px;}
+
+.section-block{margin-bottom:60px;}
+.section-label{font-family:var(--mono);color:var(--accent);font-size:.7rem;letter-spacing:4px;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.section-title{font-family:var(--display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;margin-bottom:20px;}
+.prose{color:var(--muted);font-size:.97rem;line-height:1.9;}
+.prose strong{color:var(--text);}
+.prose p{margin-bottom:14px;}
+
+.arch-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px;}
+.arch-block{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px 24px;}
+.arch-block h4{font-family:var(--mono);font-size:.72rem;color:var(--accent);letter-spacing:2px;margin-bottom:12px;}
+.arch-block ul{list-style:none;display:flex;flex-direction:column;gap:8px;}
+.arch-block ul li{font-size:.85rem;color:var(--muted);display:flex;align-items:flex-start;gap:10px;line-height:1.5;}
+.arch-block ul li::before{content:'›';color:var(--accent);flex-shrink:0;margin-top:1px;}
+
+.phases{display:flex;flex-direction:column;gap:0;margin-top:24px;position:relative;}
+.phases::before{content:'';position:absolute;left:18px;top:0;bottom:0;width:1px;background:var(--border);}
+.phase{display:flex;gap:28px;padding-bottom:32px;position:relative;}
+.phase-dot{width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.65rem;color:var(--accent);flex-shrink:0;position:relative;z-index:1;}
+.phase-body{flex:1;padding-top:6px;}
+.phase-body h4{font-family:var(--display);font-size:1rem;font-weight:700;margin-bottom:6px;}
+.phase-body p{font-size:.85rem;color:var(--muted);line-height:1.7;}
+.phase-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.phase-tag{font-family:var(--mono);font-size:.58rem;color:var(--muted);border:1px solid var(--border);padding:2px 7px;border-radius:2px;}
+
+.problem-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px;}
+.problem-card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px;}
+.problem-card h4{font-family:var(--mono);font-size:.68rem;color:rgba(255,80,80,.8);letter-spacing:1px;margin-bottom:8px;}
+.problem-card p{font-size:.83rem;color:var(--muted);line-height:1.6;}
+.solution-card{background:var(--card);border:1px solid rgba(0,229,160,.15);border-radius:6px;padding:20px;}
+.solution-card h4{font-family:var(--mono);font-size:.68rem;color:var(--accent);letter-spacing:1px;margin-bottom:8px;}
+.solution-card p{font-size:.83rem;color:var(--muted);line-height:1.6;}
+
+.tech-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:24px;}
+.tech-item{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:14px;text-align:center;}
+.tech-item .tech-name{font-family:var(--mono);font-size:.72rem;color:var(--text);display:block;margin-top:6px;}
+.tech-item .tech-role{font-family:var(--mono);font-size:.58rem;color:var(--muted);display:block;margin-top:3px;}
+
+.downloads-section{background:var(--card);border:1px solid rgba(0,229,160,.2);border-radius:8px;padding:40px;margin-top:70px;}
+.downloads-section h2{font-family:var(--display);font-size:clamp(1.4rem,3vw,2rem);font-weight:800;letter-spacing:-1px;margin-bottom:8px;}
+.downloads-section p{color:var(--muted);font-size:.9rem;margin-bottom:32px;max-width:500px;}
+.dl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+.dl-card{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:10px;transition:.2s;}
+.dl-card:hover{border-color:rgba(0,229,160,.3);}
+.dl-card-icon{font-size:1.6rem;}
+.dl-card-title{font-family:var(--display);font-size:.95rem;font-weight:700;}
+.dl-card-desc{font-size:.78rem;color:var(--muted);line-height:1.5;flex:1;}
+.dl-card-btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:.65rem;color:var(--accent);text-decoration:none;letter-spacing:1px;padding:7px 12px;border:1px solid rgba(0,229,160,.3);border-radius:2px;transition:.2s;width:fit-content;}
+.dl-card-btn:hover{background:rgba(0,229,160,.08);}
+
+.terminal{background:#080c10;border:1px solid var(--border);border-radius:6px;padding:20px 24px;font-family:var(--mono);font-size:.8rem;line-height:2;margin-top:24px;}
+.term-header{display:flex;gap:6px;margin-bottom:16px;}
+.dot{width:10px;height:10px;border-radius:50%;}
+.dot-r{background:#ff5f57;}.dot-y{background:#febc2e;}.dot-g{background:#28c840;}
+.term-line{color:var(--muted);}
+.term-line .prompt{color:var(--accent);}
+.term-line .cmd{color:var(--text);}
+.term-line .out{color:#6b8fa3;}
+.term-success{color:var(--accent);font-weight:bold;}
+.term-warn{color:var(--gold);}
+.cursor-blink{animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+
+.cta-box{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:48px;text-align:center;margin-top:70px;position:relative;overflow:hidden;}
+.cta-box::before{content:'';position:absolute;top:-50%;left:50%;transform:translateX(-50%);width:400px;height:400px;background:radial-gradient(circle,rgba(0,229,160,.04),transparent 70%);}
+.cta-box h2{font-family:var(--display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;margin-bottom:12px;}
+.cta-box p{color:var(--muted);font-size:.93rem;max-width:480px;margin:0 auto 28px;}
+.cta-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+
+footer{text-align:center;padding:32px;color:var(--muted);font-family:var(--mono);font-size:.65rem;letter-spacing:2px;border-top:1px solid var(--border);margin-top:0;}
+
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+
+@media(max-width:900px){
+  .summary-grid{grid-template-columns:1fr 1fr;}
+  .arch-grid{grid-template-columns:1fr;}
+  .problem-grid{grid-template-columns:1fr;}
+  .proj-hero h1{font-size:2.2rem;}
+  .cta-box{padding:36px 24px;}
+}
+@media(max-width:600px){
+  .summary-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="portfolio_marina.html" class="nav-logo">MPLO://sec</a>
+    <a href="portfolio_marina.html#portfolio" class="nav-back">← Volver al portfolio</a>
+  </div>
+</nav>
+
+<section class="proj-hero">
+  <div class="hero-content">
+    <span class="proj-badge">PROYECTO INTEGRADOR · 8 DOCUMENTOS</span>
+    <h1>Puesta en producción segura<br><span>DevSecOps, SAST, hardening y pipeline CI/CD</span></h1>
+    <div class="proj-meta">
+      <div class="meta-item">ÁMBITO: <span>Seguridad en el ciclo de vida del software (DevSecOps)</span></div>
+      <div class="meta-item">HERRAMIENTAS: <span>Semgrep · Bandit · Trivy · pip-audit · Docker · GitHub Actions</span></div>
+      <div class="meta-item">VULNERABILIDADES: <span>SQLi, XSS, Command Injection, IDOR, Path Traversal, debug=True</span></div>
+      <div class="meta-item">AÑO: <span>2025-2026</span></div>
+    </div>
+    <div class="hero-tags">
+      <span class="tag">OWASP Top 10</span>
+      <span class="tag">SAST / DAST</span>
+      <span class="tag">SCA / SBOM</span>
+      <span class="tag purple">Hardening</span>
+      <span class="tag gold">Pipeline CI/CD seguro</span>
+      <span class="tag">Dockerfile seguro</span>
+    </div>
+    <div class="hero-actions">
+      <a href="#downloads" class="btn-primary">↓ Descargar documentación</a>
+      <a href="portfolio_marina.html#portfolio" class="btn-outline">← Ver más proyectos</a>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<div class="content">
+
+  <!-- Resumen rápido -->
+  <div class="summary-grid reveal">
+    <div class="summary-card">
+      <div class="summary-label">DOCUMENTOS</div>
+      <div class="summary-value">8</div>
+      <div class="summary-sub">Ejercicios teóricos + proyecto completo</div>
+    </div>
+    <div class="summary-card gold">
+      <div class="summary-label">VULNERABILIDADES</div>
+      <div class="summary-value">11 identificadas</div>
+      <div class="summary-sub">7 críticas · 3 altas · 1 media</div>
+    </div>
+    <div class="summary-card purple">
+      <div class="summary-label">FASES DEVSECOPS</div>
+      <div class="summary-value">6</div>
+      <div class="summary-sub">Plan · Code · Build · Test · Release · Deploy · Monitor</div>
+    </div>
+  </div>
+
+  <!-- Contexto -->
+  <div class="section-block reveal">
+    <div class="section-label">01_contexto</div>
+    <h2 class="section-title">Seguridad integrada en el ciclo de vida del desarrollo de software</h2>
+    <div class="prose">
+      <p>Este proyecto agrupa todos los ejercicios y el proyecto final de la asignatura de <strong>Puesta en Producción Segura (PPS)</strong>, que abarca desde la identificación de vulnerabilidades en código (OWASP Top 10) hasta la implementación de un pipeline CI/CD seguro siguiendo prácticas DevSecOps.</p>
+      <p>Los contenidos incluyen:</p>
+      <ul style="margin-left:2rem; color:var(--muted);">
+        <li><strong>Ejercicios de vulnerabilidades:</strong> detección de problemas en fragmentos de código (SQL Injection, XSS, almacenamiento inseguro, deserialización, exposición de datos, IDOR, cifrado débil, subida de ficheros, etc.) y propuesta de soluciones.</li>
+        <li><strong>Examen teórico:</strong> preguntas sobre overflow, vulnerabilidades en lenguajes de alto nivel, pruebas de software y análisis de código vulnerable (XSS).</li>
+        <li><strong>Evaluación de riesgos (MAGERIT):</strong> mapeo de datos sensibles, identificación de controles, plantilla de riesgos y código mejorado para una aplicación de gestión de pacientes.</li>
+        <li><strong>Seguridad para servicios web (OWASP):</strong> diseño seguro de endpoints, configuración de gateways, monitorización de APIs.</li>
+        <li><strong>Análisis de tráfico web y detección de vulnerabilidades OWASP:</strong> identificación de malas prácticas en capturas de tráfico HTTP y correlación con OWASP Top 10.</li>
+        <li><strong>Corrección de código vulnerable (API REST):</strong> identificación de vulnerabilidades (SQLi, credenciales en texto plano, falta de autenticación, IDOR, debug mode) y desarrollo de código seguro.</li>
+        <li><strong>DevSecOps (2 ejercicios):</strong> análisis de incumplimientos por fases (Plan, Code, Build, Test, Release, Deploy, Monitor) en dos escenarios diferentes, con propuestas de mejora.</li>
+        <li><strong>Seguridad en apps móviles:</strong> riesgos principales, comparativa Android/iOS, OWASP Mobile Top 10, técnicas de detección, herramientas (MobSF, Frida, Burp, etc.) y buenas prácticas.</li>
+        <li><strong>Proyecto final PPS:</strong> análisis completo de una aplicación Flask vulnerable (11 vulnerabilidades), corrección de código, implementación de cabeceras de seguridad HTTP, análisis SAST con Bandit, construcción de Dockerfile seguro, pipeline CI/CD diagramado y gatekeeping.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Arquitectura de metodología -->
+  <div class="section-block reveal">
+    <div class="section-label">02_fases</div>
+    <h2 class="section-title">Metodología DevSecOps aplicada</h2>
+    <div class="arch-grid">
+      <div class="arch-block">
+        <h4>PLAN</h4>
+        <ul>
+          <li>Definición de requisitos de seguridad medibles.</li>
+          <li>Análisis de amenazas documentado (modelado de amenazas).</li>
+          <li>Requisitos de cumplimiento normativo (RGPD/LOPD).</li>
+          <li>Planificación de validación de entradas y uso de parámetros.</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>CODE (Desarrollo seguro)</h4>
+        <ul>
+          <li>Consultas parametrizadas (SQL Injection).</li>
+          <li>Hashing de contraseñas (bcrypt / werkzeug.security).</li>
+          <li>Escape de salida HTML (XSS).</li>
+          <li>Validación de entrada (regex, whitelist).</li>
+          <li>Uso de subprocess.run con shell=False (command injection).</li>
+          <li>Gestión de secretos mediante variables de entorno (no hardcodeados).</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>BUILD (Análisis estático + SCA)</h4>
+        <ul>
+          <li><strong>SAST:</strong> Semgrep / Bandit (detección de SQLi, XSS, command injection, debug=True).</li>
+          <li><strong>SCA:</strong> OWASP Dependency-Check / pip-audit / Snyk (detección de CVEs en dependencias).</li>
+          <li><strong>SBOM:</strong> Syft (CycloneDX/SPDX).</li>
+          <li>Gatekeeping: bloqueo si se detectan vulnerabilidades críticas.</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>TEST (DAST + pruebas de seguridad)</h4>
+        <ul>
+          <li>Pruebas unitarias con mocks/stubs (aislamiento de servicios externos).</li>
+          <li>Pruebas de integración con entornos efímeros.</li>
+          <li>DAST: ZAP, Burp Suite (pruebas de inyección, bypass de autenticación).</li>
+          <li>Pentesting interno antes del release.</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>RELEASE + DEPLOY</h4>
+        <ul>
+          <li>Security gate automático (no release si SAST/SCA detectan críticos).</li>
+          <li>Aprobación explícita del responsable de seguridad.</li>
+          <li>Eliminación de secretos del historial de Git.</li>
+          <li>Uso de variables de entorno para configuración sensible.</li>
+          <li>Proxy inverso (Nginx) con TLS (HTTPS).</li>
+          <li>Contenedor con usuario no root y HEALTHCHECK.</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>MONITOR</h4>
+        <ul>
+          <li>Logs centralizados (SIEM).</li>
+          <li>Alertas automáticas (patrones de ataque, fuerza bruta).</li>
+          <li>No exponer datos sensibles en logs (contraseñas, tokens).</li>
+          <li>Plan de respuesta a incidentes.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fases de los documentos (resumen) -->
+  <div class="section-block reveal">
+    <div class="section-label">03_documentos</div>
+    <h2 class="section-title">Prácticas y ejercicios de PPS</h2>
+    <div class="phases">
+      <div class="phase">
+        <div class="phase-dot">01</div>
+        <div class="phase-body">
+          <h4>Ejercicios de vulnerabilidades (10 problemas)</h4>
+          <p>Análisis de 10 fragmentos de código vulnerables (SQLi, XSS, almacenamiento inseguro, deserialización, logs con contraseñas, IDOR, cifrado débil, subida de ficheros, API sin autenticación, lógica rota). Para cada uno: identificación del problema, riesgos y solución con código corregido.</p>
+          <div class="phase-tags"><span class="phase-tag">SQLi</span><span class="phase-tag">XSS</span><span class="phase-tag">IDOR</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">02</div>
+        <div class="phase-body">
+          <h4>Tipos de vulnerabilidades en software (10 ejercicios resueltos)</h4>
+          <p>Versión extendida de los ejercicios anteriores, con soluciones completas en Python (consultas parametrizadas, escape HTML, validación de entrada, hashing SHA256, control de errores, etc.).</p>
+          <div class="phase-tags"><span class="phase-tag">Python</span><span class="phase-tag">hashing</span><span class="phase-tag">validación</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">03</div>
+        <div class="phase-body">
+          <h4>Examen 1 – Teoría de vulnerabilidades y código vulnerable</h4>
+          <p>Respuesta a preguntas teóricas sobre overflow, vulnerabilidades en lenguajes de alto nivel (inyección SQL, XSS, CSRF, path traversal, etc.), pruebas de software y análisis de un servidor HTTP vulnerable (XSS reflejado).</p>
+          <div class="phase-tags"><span class="phase-tag">Teoría</span><span class="phase-tag">Código vulnerable</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">04</div>
+        <div class="phase-body">
+          <h4>Evaluación de riesgos – Gestión de pacientes (MAGERIT)</h4>
+          <p>Mapeo de datos sensibles, identificación de controles existentes y riesgos, plantilla de evaluación de riesgos y código mejorado (cifrado de diagnóstico, logging de auditoría, control de accesos por roles, timeout de sesión, protección de archivos).</p>
+          <div class="phase-tags"><span class="phase-tag">MAGERIT</span><span class="phase-tag">cifrado</span><span class="phase-tag">RBAC</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">05</div>
+        <div class="phase-body">
+          <h4>Seguridad para servicios web (OWASP)</h4>
+          <p>Diseño seguro de endpoints, configuración de gateways/proxies inversos (HTTPS, WAF, CORS, HSTS, CSP), monitorización de consumo y abuso de APIs (rate limiting, logging, alertas).</p>
+          <div class="phase-tags"><span class="phase-tag">OWASP</span><span class="phase-tag">gateway</span><span class="phase-tag">rate limiting</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">06</div>
+        <div class="phase-body">
+          <h4>Análisis de tráfico web + detección OWASP</h4>
+          <p>Captura de tráfico HTTP con credenciales en texto plano (usuario admin, contraseña admin123) → vulnerabilidad crítica. Propuesta de HTTPS. Tabla de vulnerabilidades OWASP (A01 a A07) detectadas en un escenario de API REST.</p>
+          <div class="phase-tags"><span class="phase-tag">Wireshark</span><span class="phase-tag">HTTPS</span><span class="phase-tag">OWASP</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">07</div>
+        <div class="phase-body">
+          <h4>Corrección de código vulnerable – API REST (Ejercicio 8)</h4>
+          <p>Identificación de 5 vulnerabilidades (SQLi, texto plano, IDOR, sin control de privilegios, debug=True). Código mejorado con consultas parametrizadas, hashing, autenticación con token, control de roles (admin/user), y debug=False.</p>
+          <div class="phase-tags"><span class="phase-tag">Flask</span><span class="phase-tag">SQLite</span><span class="phase-tag">RBAC</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">08</div>
+        <div class="phase-body">
+          <h4>DevSecOps (2 ejercicios: incumplimientos por fases)</h4>
+          <p>Análisis de dos escenarios de aplicación vulnerable. Para cada fase (Plan, Code, Build, Test, Release, Deploy, Monitor) se identifican incumplimientos, riesgos y propuestas de corrección. Incluye referencias a SCA, SAST, security gate, SBOM, etc.</p>
+          <div class="phase-tags"><span class="phase-tag">DevSecOps</span><span class="phase-tag">SCA</span><span class="phase-tag">security gate</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">09</div>
+        <div class="phase-body">
+          <h4>Seguridad en apps móviles (presentación teórica)</h4>
+          <p>Riesgos principales (almacenamiento inseguro, comunicaciones no cifradas, dependencias, autenticación débil), comparativa Android vs iOS, OWASP Mobile Top 10 2024, técnicas de detección (SAST, DAST, análisis de tráfico, ingeniería inversa), herramientas (MobSF, Frida, Burp, jadx, objection) y buenas prácticas (cifrado, certificate pinning, ofuscación).</p>
+          <div class="phase-tags"><span class="phase-tag">MobSF</span><span class="phase-tag">Frida</span><span class="phase-tag">certificate pinning</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">10</div>
+        <div class="phase-body">
+          <h4>Proyecto final PPS – SecureBank (Flask)</h4>
+          <p>Análisis de 11 vulnerabilidades críticas (secret key hardcodeada, contraseñas en texto plano, SQLi, XSS, falta de autenticación, admin sin rol, command injection, path traversal, ausencia de cabeceras, debug=True, binding 0.0.0.0). Corrección completa del código, implementación de cabeceras HTTP (CSP, X-Frame-Options, HSTS, X-Content-Type-Options), análisis SAST con Bandit (comparativa antes/después), Dockerfile seguro (usuario no root, .dockerignore, gunicorn, HEALTHCHECK), pipeline CI/CD diagramado con gatekeeping.</p>
+          <div class="phase-tags"><span class="phase-tag">Flask</span><span class="phase-tag">Bandit</span><span class="phase-tag">Docker</span><span class="phase-tag">CI/CD</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hallazgos clave y métricas -->
+  <div class="section-block reveal">
+    <div class="section-label">04_hallazgos</div>
+    <h2 class="section-title">Vulnerabilidades críticas corregidas</h2>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <h4>V-01 – Secret key hardcodeada</h4>
+        <p>Cualquier atacante con acceso al repositorio podía forjar cookies de sesión Flask (HMAC-SHA1).</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN</h4>
+        <p>Cargar SECRET_KEY de variable de entorno o generar token aleatorio en desarrollo con secrets.token_hex(32).</p>
+      </div>
+      <div class="problem-card">
+        <h4>V-03 – SQL Injection</h4>
+        <p>Concatenación directa de username/password en consulta SQL → acceso sin credenciales (OR 1=1).</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN</h4>
+        <p>Consulta parametrizada con placeholder ?. SQLite trata los inputs como datos literales, no como código.</p>
+      </div>
+      <div class="problem-card">
+        <h4>V-07 – Command Injection</h4>
+        <p>subprocess.getoutput("ping -c 1 " + host) con payload 127.0.0.1; cat /etc/passwd.</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN</h4>
+        <p>Validación de host con regex + subprocess.run([...], shell=False). Sin shell, los metacaracteres no se interpretan.</p>
+      </div>
+      <div class="problem-card">
+        <h4>V-10 – Debug mode en producción</h4>
+        <p>app.run(debug=True) expone debugger interactivo de Werkzeug → ejecución remota de código Python.</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN</h4>
+        <p>debug=False, usar gunicorn/uwsgi detrás de proxy inverso. Eliminación completa del debugger.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stack tecnológico -->
+  <div class="section-block reveal">
+    <div class="section-label">05_tecnologías</div>
+    <h2 class="section-title">Herramientas de seguridad en el ciclo de vida</h2>
+    <div class="tech-grid">
+      <div class="tech-item"><span class="tech-name">Bandit</span><span class="tech-role">SAST para Python</span></div>
+      <div class="tech-item"><span class="tech-name">Semgrep</span><span class="tech-role">SAST multi-lenguaje</span></div>
+      <div class="tech-item"><span class="tech-name">pip-audit</span><span class="tech-role">SCA (dependencias Python)</span></div>
+      <div class="tech-item"><span class="tech-name">Trivy</span><span class="tech-role">Análisis de imagen Docker</span></div>
+      <div class="tech-item"><span class="tech-name">Syft</span><span class="tech-role">Generación de SBOM (CycloneDX)</span></div>
+      <div class="tech-item"><span class="tech-name">Flask / Jinja2</span><span class="tech-role">Framework web (corregido)</span></div>
+      <div class="tech-item"><span class="tech-name">Docker / gunicorn</span><span class="tech-role">Contenedor seguro</span></div>
+      <div class="tech-item"><span class="tech-name">GitHub Actions</span><span class="tech-role">Pipeline CI/CD</span></div>
+      <div class="tech-item"><span class="tech-name">Burp Suite / ZAP</span><span class="tech-role">DAST</span></div>
+      <div class="tech-item"><span class="tech-name">MobSF / Frida</span><span class="tech-role">Seguridad móvil</span></div>
+    </div>
+  </div>
+
+  <!-- Bloque de descargas -->
+  <div class="downloads-section reveal" id="downloads">
+    <h2>📄 Documentación de PPS</h2>
+    <p>Ejercicios teóricos, correcciones de código y proyecto final de puesta en producción segura.</p>
+    <div class="dl-grid">
+      <div class="dl-card">
+        <div class="dl-card-icon">🐍</div>
+        <div class="dl-card-title">Ejercicios vulnerabilidades (10 problemas)</div>
+        <div class="dl-card-desc">Detección de SQLi, XSS, almacenamiento inseguro, deserialización, logs con contraseñas, IDOR, cifrado débil, subida de ficheros, API sin autenticación y lógica rota. Propuesta de soluciones.</div>
+        <a href="docs/PPS_Ejercicios_Vulnerabilidades.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">📘</div>
+        <div class="dl-card-title">Tipos de vulnerabilidades en software</div>
+        <div class="dl-card-desc">10 ejercicios resueltos con código Python corregido (consultas parametrizadas, escape HTML, hashing, validación de entrada, manejo de errores).</div>
+        <a href="docs/PPS_Tipos_Vulnerabilidades.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">📝</div>
+        <div class="dl-card-title">Examen 1 – Teoría + código vulnerable</div>
+        <div class="dl-card-desc">Preguntas sobre overflow, vulnerabilidades en lenguajes de alto nivel, pruebas de software y análisis de servidor HTTP con XSS reflejado.</div>
+        <a href="docs/PPS_Examen1_Teoria.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">⚠️</div>
+        <div class="dl-card-title">Evaluación de riesgos – Gestión de pacientes</div>
+        <div class="dl-card-desc">Mapeo de datos sensibles, controles existentes, plantilla de riesgos (MAGERIT) y código mejorado (cifrado, logs, RBAC, timeout).</div>
+        <a href="docs/PPS_Evaluacion_Riesgos_Pacientes.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">🌐</div>
+        <div class="dl-card-title">Seguridad servicios web (OWASP)</div>
+        <div class="dl-card-desc">Diseño seguro de endpoints, configuración de gateways/proxies inversos, monitorización de APIs, rate limiting, WAF, HSTS, CSP.</div>
+        <a href="docs/PPS_Seguridad_Servicios_Web_OWASP.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">📡</div>
+        <div class="dl-card-title">Análisis de tráfico web + OWASP</div>
+        <div class="dl-card-desc">Captura HTTP con credenciales en texto plano, propuesta de HTTPS, tabla de vulnerabilidades OWASP (A01-A07) detectadas en API REST.</div>
+        <a href="docs/PPS_Analisis_Trafico_OWASP.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">⚙️</div>
+        <div class="dl-card-title">Corrección API REST (Ejercicio 8)</div>
+        <div class="dl-card-desc">Identificación de 5 vulnerabilidades y código mejorado (consultas parametrizadas, hashing, token auth, control de roles, debug=False).</div>
+        <a href="docs/PPS_Correccion_API_REST.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">🔁</div>
+        <div class="dl-card-title">DevSecOps (2 ejercicios)</div>
+        <div class="dl-card-desc">Análisis de incumplimientos por fase (Plan, Code, Build, Test, Release, Deploy, Monitor). Propuesta de SCA, SAST, security gate, SBOM.</div>
+        <a href="docs/PPS_DevSecOps_Ejercicio1.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+        <a href="docs/PPS_DevSecOps_Ejercicio2.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">📱</div>
+        <div class="dl-card-title">Seguridad en apps móviles</div>
+        <div class="dl-card-desc">Riesgos, OWASP Mobile Top 10, técnicas de detección (SAST, DAST, ingeniería inversa), herramientas (MobSF, Frida, Burp) y buenas prácticas.</div>
+        <a href="docs/PPS_Seguridad_Apps_Moviles.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">🏦</div>
+        <div class="dl-card-title">Proyecto final – SecureBank (Flask)</div>
+        <div class="dl-card-desc">Análisis de 11 vulnerabilidades, corrección completa, cabeceras HTTP, SAST con Bandit (antes/después), Dockerfile seguro, pipeline CI/CD diagramado.</div>
+        <a href="docs/PPS_Proyecto_SecureBank.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+    </div>
+    <p style="margin-top:24px; font-size:.75rem; color:var(--muted); text-align:center;">📌 Los PDFs deben ubicarse en la carpeta <code>docs/</code> con los nombres mostrados. Ajusta las rutas según tu estructura real.</p>
+  </div>
+
+  <!-- Terminal de conclusiones -->
+  <div class="section-block reveal">
+    <div class="section-label">06_conclusiones</div>
+    <h2 class="section-title">Resultados y métricas de seguridad</h2>
+    <div class="terminal">
+      <div class="term-header"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+      <div class="term-line"><span class="prompt">marina@pps:~$</span> <span class="cmd">./evaluate_secure_software_lifecycle.sh</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Identificación de 10 vulnerabilidades en ejercicios + 11 en proyecto final.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Corrección de SQL Injection, XSS, Command Injection, Path Traversal y IDOR.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Sustitución de contraseñas en texto plano por hashing bcrypt (werkzeug.security).</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Eliminación de secretos hardcodeados → variables de entorno + secrets.token_hex().</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Implementación de cabeceras HTTP (CSP, X-Frame-Options, HSTS, X-Content-Type-Options).</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] SAST con Bandit: severidades High/Medium reducidas a 0 (solo 3 bajos informativos).</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Dockerfile seguro: imagen slim, usuario no root, HEALTHCHECK, .dockerignore.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Pipeline CI/CD diagramado con gatekeeping en todas las fases.</span></div>
+      <div class="term-line"><span class="term-warn">[ MEJORA ] Integrar DAST automático (ZAP) en el pipeline de integración continua.</span></div>
+      <div class="term-line"><span class="term-warn">[ MEJORA ] Implementar SAST con Semgrep (mayor cobertura que Bandit) y SCA con Snyk.</span></div>
+      <div class="term-line"><span class="prompt">marina@pps:~$</span> <span class="cmd">echo "Puesta en producción segura completada según estándares OWASP y DevSecOps"</span></div>
+      <div class="term-line"><span class="term-success">Puesta en producción segura completada según estándares OWASP y DevSecOps</span></div>
+      <div class="term-line"><span class="prompt">marina@pps:~$ <span class="cursor-blink">▊</span></span></div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-box reveal">
+    <h2>¿Necesitas una auditoría de seguridad de código o implantar DevSecOps?</h2>
+    <p>Este proyecto demuestra que domino la identificación y corrección de vulnerabilidades OWASP Top 10, el análisis SAST/SCA, la construcción de imágenes Docker seguras y el diseño de pipelines CI/CD con seguridad integrada. Contacta conmigo para implementar prácticas DevSecOps en tu organización.</p>
+    <div class="cta-actions">
+      <a href="portfolio_marina.html#contact" class="btn-primary">→ Contactar</a>
+      <a href="portfolio_marina.html#portfolio" class="btn-outline">← Volver al portfolio</a>
+    </div>
+  </div>
+
+</div>
+
+<footer>MARINA DEL PILAR LÓPEZ OLIVA // PUESTA EN PRODUCCIÓN SEGURA (DEVSECOPS) // 2025-2026</footer>
+
+<script>
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

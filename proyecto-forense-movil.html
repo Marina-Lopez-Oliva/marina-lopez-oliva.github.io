@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Análisis forense de dispositivos móviles · Android, iOS, Chromebook, Takeout | Marina del Pilar López Oliva</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Fira+Code:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#06080c;--surface:#0e1117;--card:#131821;
+  --accent:#00e5a0; --accent2:#a259ff; --gold:#ffd166;
+  --blue:#7eb8ff; --fire:#ff9a3c;
+  --text:#eef0f5; --muted:#6b7280; --border:#1e2530;
+  --mono:'Fira Code',monospace; --display:'Syne',sans-serif; --body:'DM Sans',sans-serif;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--body);overflow-x:hidden;line-height:1.6;}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--blue);border-radius:2px;}
+
+nav{position:fixed;top:0;width:100%;z-index:100;background:rgba(6,8,12,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 6%;}
+.nav-inner{display:flex;justify-content:space-between;align-items:center;}
+.nav-logo{font-family:var(--mono);color:var(--accent);font-size:.85rem;letter-spacing:2px;text-decoration:none;}
+.nav-back{font-family:var(--mono);font-size:.7rem;color:var(--muted);text-decoration:none;letter-spacing:1px;transition:.2s;display:flex;align-items:center;gap:8px;}
+.nav-back:hover{color:var(--accent);}
+
+.proj-hero{min-height:55vh;display:flex;flex-direction:column;justify-content:flex-end;padding:120px 6% 60px;position:relative;overflow:hidden;}
+.proj-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 30% 50%,rgba(126,184,255,.06),transparent);}
+.proj-hero::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 50% 40% at 80% 50%,rgba(0,229,160,.04),transparent);}
+.hero-content{position:relative;z-index:1;max-width:1200px;margin:0 auto;width:100%;}
+.proj-badge{font-family:var(--mono);font-size:.65rem;color:var(--blue);border:1px solid rgba(126,184,255,.3);padding:5px 14px;border-radius:2px;letter-spacing:2px;display:inline-block;margin-bottom:20px;background:rgba(126,184,255,.06);}
+.proj-hero h1{font-family:var(--display);font-size:clamp(2.2rem,6vw,5rem);font-weight:800;letter-spacing:-2px;line-height:.95;margin-bottom:20px;}
+.proj-hero h1 span{color:var(--blue);}
+.proj-meta{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:32px;}
+.meta-item{font-family:var(--mono);font-size:.7rem;color:var(--muted);letter-spacing:1px;display:flex;align-items:center;gap:6px;}
+.meta-item span{color:var(--text);}
+.hero-tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:40px;}
+.tag{font-family:var(--mono);font-size:.6rem;color:var(--accent);border:1px solid rgba(0,229,160,.25);padding:4px 10px;border-radius:2px;letter-spacing:1px;}
+.tag.blue{color:var(--blue);border-color:rgba(126,184,255,.25);}
+.tag.gold{color:var(--gold);border-color:rgba(255,209,102,.25);}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--blue);color:#000;font-family:var(--mono);font-size:.78rem;font-weight:600;padding:12px 28px;border-radius:3px;text-decoration:none;letter-spacing:1px;transition:.2s;}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(126,184,255,.25);}
+.btn-outline{display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--text);font-family:var(--mono);font-size:.78rem;padding:12px 28px;border-radius:3px;text-decoration:none;letter-spacing:1px;border:1px solid var(--border);transition:.2s;}
+.btn-outline:hover{border-color:var(--blue);color:var(--blue);}
+
+.divider{height:1px;background:var(--border);}
+.content{max-width:1200px;margin:0 auto;padding:70px 6%;}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:70px;}
+.summary-card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:24px;position:relative;overflow:hidden;}
+.summary-card::before{content:'';position:absolute;bottom:0;left:0;width:100%;height:2px;background:var(--blue);}
+.summary-card.gold::before{background:var(--gold);}
+.summary-card.purple::before{background:var(--accent2);}
+.summary-label{font-family:var(--mono);font-size:.6rem;color:var(--muted);letter-spacing:2px;margin-bottom:10px;}
+.summary-value{font-family:var(--display);font-size:1.4rem;font-weight:800;color:var(--text);}
+.summary-sub{font-size:.8rem;color:var(--muted);margin-top:4px;}
+
+.section-block{margin-bottom:60px;}
+.section-label{font-family:var(--mono);color:var(--blue);font-size:.7rem;letter-spacing:4px;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.section-title{font-family:var(--display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;margin-bottom:20px;}
+.prose{color:var(--muted);font-size:.97rem;line-height:1.9;}
+.prose strong{color:var(--text);}
+.prose p{margin-bottom:14px;}
+
+.arch-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px;}
+.arch-block{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px 24px;}
+.arch-block h4{font-family:var(--mono);font-size:.72rem;color:var(--blue);letter-spacing:2px;margin-bottom:12px;}
+.arch-block ul{list-style:none;display:flex;flex-direction:column;gap:8px;}
+.arch-block ul li{font-size:.85rem;color:var(--muted);display:flex;align-items:flex-start;gap:10px;line-height:1.5;}
+.arch-block ul li::before{content:'›';color:var(--blue);flex-shrink:0;margin-top:1px;}
+
+.phases{display:flex;flex-direction:column;gap:0;margin-top:24px;position:relative;}
+.phases::before{content:'';position:absolute;left:18px;top:0;bottom:0;width:1px;background:var(--border);}
+.phase{display:flex;gap:28px;padding-bottom:32px;position:relative;}
+.phase-dot{width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.65rem;color:var(--blue);flex-shrink:0;position:relative;z-index:1;}
+.phase-body{flex:1;padding-top:6px;}
+.phase-body h4{font-family:var(--display);font-size:1rem;font-weight:700;margin-bottom:6px;}
+.phase-body p{font-size:.85rem;color:var(--muted);line-height:1.7;}
+.phase-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.phase-tag{font-family:var(--mono);font-size:.58rem;color:var(--muted);border:1px solid var(--border);padding:2px 7px;border-radius:2px;}
+
+.problem-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px;}
+.problem-card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px;}
+.problem-card h4{font-family:var(--mono);font-size:.68rem;color:rgba(255,80,80,.8);letter-spacing:1px;margin-bottom:8px;}
+.problem-card p{font-size:.83rem;color:var(--muted);line-height:1.6;}
+.solution-card{background:var(--card);border:1px solid rgba(126,184,255,.15);border-radius:6px;padding:20px;}
+.solution-card h4{font-family:var(--mono);font-size:.68rem;color:var(--blue);letter-spacing:1px;margin-bottom:8px;}
+.solution-card p{font-size:.83rem;color:var(--muted);line-height:1.6;}
+
+.tech-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:24px;}
+.tech-item{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:14px;text-align:center;}
+.tech-item .tech-name{font-family:var(--mono);font-size:.72rem;color:var(--text);display:block;margin-top:6px;}
+.tech-item .tech-role{font-family:var(--mono);font-size:.58rem;color:var(--muted);display:block;margin-top:3px;}
+
+.downloads-section{background:var(--card);border:1px solid rgba(126,184,255,.2);border-radius:8px;padding:40px;margin-top:70px;}
+.downloads-section h2{font-family:var(--display);font-size:clamp(1.4rem,3vw,2rem);font-weight:800;letter-spacing:-1px;margin-bottom:8px;}
+.downloads-section p{color:var(--muted);font-size:.9rem;margin-bottom:32px;max-width:500px;}
+.dl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+.dl-card{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:10px;transition:.2s;}
+.dl-card:hover{border-color:rgba(126,184,255,.3);}
+.dl-card-icon{font-size:1.6rem;}
+.dl-card-title{font-family:var(--display);font-size:.95rem;font-weight:700;}
+.dl-card-desc{font-size:.78rem;color:var(--muted);line-height:1.5;flex:1;}
+.dl-card-btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:.65rem;color:var(--blue);text-decoration:none;letter-spacing:1px;padding:7px 12px;border:1px solid rgba(126,184,255,.3);border-radius:2px;transition:.2s;width:fit-content;}
+.dl-card-btn:hover{background:rgba(126,184,255,.08);}
+
+.terminal{background:#080c10;border:1px solid var(--border);border-radius:6px;padding:20px 24px;font-family:var(--mono);font-size:.8rem;line-height:2;margin-top:24px;}
+.term-header{display:flex;gap:6px;margin-bottom:16px;}
+.dot{width:10px;height:10px;border-radius:50%;}
+.dot-r{background:#ff5f57;}.dot-y{background:#febc2e;}.dot-g{background:#28c840;}
+.term-line{color:var(--muted);}
+.term-line .prompt{color:var(--accent);}
+.term-line .cmd{color:var(--text);}
+.term-line .out{color:#6b8fa3;}
+.term-success{color:var(--accent);font-weight:bold;}
+.term-warn{color:var(--gold);}
+.cursor-blink{animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+
+.cta-box{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:48px;text-align:center;margin-top:70px;position:relative;overflow:hidden;}
+.cta-box::before{content:'';position:absolute;top:-50%;left:50%;transform:translateX(-50%);width:400px;height:400px;background:radial-gradient(circle,rgba(126,184,255,.04),transparent 70%);}
+.cta-box h2{font-family:var(--display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;margin-bottom:12px;}
+.cta-box p{color:var(--muted);font-size:.93rem;max-width:480px;margin:0 auto 28px;}
+.cta-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+
+footer{text-align:center;padding:32px;color:var(--muted);font-family:var(--mono);font-size:.65rem;letter-spacing:2px;border-top:1px solid var(--border);margin-top:0;}
+
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+
+@media(max-width:900px){
+  .summary-grid{grid-template-columns:1fr 1fr;}
+  .arch-grid{grid-template-columns:1fr;}
+  .problem-grid{grid-template-columns:1fr;}
+  .proj-hero h1{font-size:2.2rem;}
+  .cta-box{padding:36px 24px;}
+}
+@media(max-width:600px){
+  .summary-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="portfolio_marina.html" class="nav-logo">MPLO://sec</a>
+    <a href="portfolio_marina.html#portfolio" class="nav-back">← Volver al portfolio</a>
+  </div>
+</nav>
+
+<section class="proj-hero">
+  <div class="hero-content">
+    <span class="proj-badge">PROYECTO INTEGRADOR · FORENSE MÓVIL</span>
+    <h1>Análisis forense de dispositivos móviles<br><span>Android, iOS, Chromebook y Google Takeout</span></h1>
+    <div class="proj-meta">
+      <div class="meta-item">PLATAFORMAS: <span>Android · iOS · Chromebook · Google Takeout · Windows</span></div>
+      <div class="meta-item">HERRAMIENTAS: <span>ALEAPP · iLEAPP · cLEAPP · RLEAPP · Autopsy · SQLite</span></div>
+      <div class="meta-item">ARTEFACTOS: <span>SMS · TikTok · llamadas · geocaching · correo · WSL</span></div>
+      <div class="meta-item">AÑO: <span>2024-2026</span></div>
+    </div>
+    <div class="hero-tags">
+      <span class="tag blue">ALEAPP (Android)</span>
+      <span class="tag blue">iLEAPP (iOS)</span>
+      <span class="tag blue">cLEAPP (Chromebook)</span>
+      <span class="tag gold">RLEAPP (Takeout)</span>
+      <span class="tag">SQLite</span>
+      <span class="tag">Mimikatz</span>
+    </div>
+    <div class="hero-actions">
+      <a href="#downloads" class="btn-primary">↓ Descargar writeup</a>
+      <a href="portfolio_marina.html#portfolio" class="btn-outline">← Ver más proyectos</a>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<div class="content">
+
+  <!-- Resumen rápido -->
+  <div class="summary-grid reveal">
+    <div class="summary-card">
+      <div class="summary-label">PREGUNTAS RESUELTAS</div>
+      <div class="summary-value">66</div>
+      <div class="summary-sub">Distribuidas en 5 secciones (Android, iOS, Chromebook, Takeout, Windows)</div>
+    </div>
+    <div class="summary-card gold">
+      <div class="summary-label">HERRAMIENTAS</div>
+      <div class="summary-value">4</div>
+      <div class="summary-sub">ALEAPP · iLEAPP · cLEAPP · RLEAPP</div>
+    </div>
+    <div class="summary-card purple">
+      <div class="summary-label">ARTEFACTOS CLAVE</div>
+      <div class="summary-value">TikTok, correos, GPS, Bitmoji, geocaching, Discord, SAM</div>
+      <div class="summary-sub">Análisis completo de huella digital</div>
+    </div>
+  </div>
+
+  <!-- Contexto -->
+  <div class="section-block reveal">
+    <div class="section-label">01_contexto</div>
+    <h2 class="section-title">Análisis forense multi-plataforma de dispositivos móviles</h2>
+    <div class="prose">
+      <p>Este proyecto documenta el análisis forense integral de múltiples dispositivos móviles y cuentas digitales asociadas a la investigada Mary Jones (y su entorno, incluyendo a Ruth Seleznyova). Se han analizado imágenes forenses y exportaciones de datos de <strong>Android</strong> (UserB2 - Data.tar), <strong>iOS</strong> (iPhone), <strong>Chromebook</strong> (image4.tgz), <strong>Google Takeout</strong> (cuenta ruthonthego98@gmail.com) y <strong>Windows</strong> (imagen AD1).</p>
+      <p>Las herramientas principales empleadas han sido <strong>ALEAPP</strong> (Android), <strong>iLEAPP</strong> (iOS), <strong>cLEAPP</strong> (Chromebook) y <strong>RLEAPP</strong> (Google Takeout), complementadas con análisis manual de bases de datos SQLite, volcado de hashes y extracción de metadatos. El writeup responde a 66 preguntas específicas sobre artefactos recuperados.</p>
+    </div>
+  </div>
+
+  <!-- Arquitectura de plataformas -->
+  <div class="section-block reveal">
+    <div class="section-label">02_plataformas</div>
+    <h2 class="section-title">Plataformas forenses analizadas</h2>
+    <div class="arch-grid">
+      <div class="arch-block">
+        <h4>ANDROID (ALEAPP + SQLite)</h4>
+        <ul>
+          <li>Verificación de integridad: hashes MD5/SHA256 de UserB2 - Data.tar.</li>
+          <li>SMS: conversación Mary Jones con Ruth, enlace TikTok con ciervos.</li>
+          <li>Aplicaciones instaladas: c:geo (geocaching), Fitbit, YouTube.</li>
+          <li>Google Maps: búsqueda de Champlain College Library (195 Saint Paul Street).</li>
+          <li>TikTok: nombre de usuario mary.jones7358, 0 seguidores.</li>
+          <li>Bluetooth: conexión a Google Pixel Watch.</li>
+          <li>Now Playing History: canción "Lover" de Taylor Swift.</li>
+          <li>Curriculum: Associates Degree in Marketing (GPA 4.0).</li>
+          <li>Google Photos: foto nocturna de Waterworks Park/Moran Frame.</li>
+          <li>Spam: 32 números bloqueados el 27/11/2024.</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>iOS (iLEAPP + SQLite)</h4>
+        <ul>
+          <li>Versión iOS 18.0, número de teléfono +18024959063.</li>
+          <li>Contactos: Mary (creado 13/11/2024 17:45:02 UTC).</li>
+          <li>Llamadas: 13 entrantes, 0 contestadas.</li>
+          <li>Teclado: 51 palabras autocorregidas.</li>
+          <li>Discord: IP 184.171.159.153, mensaje sobre quedar en Black Cap a las 2:15.</li>
+          <li>Bitmoji: pelo rubio.</li>
+          <li>Primera IA instalada: ChatGPT (2024-11-13 19:48:21).</li>
+          <li>Weather App: coordenadas Nashville (36.1660667, -86.777802).</li>
+          <li>Notas: respuesta segunda ecuación 432.</li>
+          <li>Permiso micrófono denegado: Snapchat.</li>
+          <li>SMS: código EARLYBF24 (Zenni, 40% descuento).</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>CHROMEBOOK (cLEAPP)</h4>
+        <ul>
+          <li>Batería: 87% (último registro 2024-12-11).</li>
+          <li>Vendor ID panel táctil: 04F3 (ELAN).</li>
+          <li>IP del Chromebook: 172.19.70.25.</li>
+          <li>Contacto único: Mary (+18028292741).</li>
+          <li>Wake source: Power Button (exclusivo).</li>
+          <li>Tiempo en GFields: 22 meses (02/2023 – 11/2024).</li>
+          <li>Fanfiction: primera visita 2024-11-06 01:09:41 a fanfiction.net.</li>
+          <li>Autofill más frecuente: ruthonthego98@gmail.com.</li>
+          <li>Anuncio de Ruth: Flopper Advertisement.jpeg (373.228 bytes).</li>
+          <li>Programa TV de Ruth: Pretty Little Liars.</li>
+          <li>Versión Krisp: 253018.</li>
+          <li>Juego instalado: Clash Royale (2024-11-16).</li>
+          <li>URL más visitada: https://takeout.google.com/ (ID 472a...).</li>
+          <li>Deporte de Ruth: marcha atlética; campeones: Caio Bonfim y María Pérez.</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>GOOGLE TAKEOUT (RLEAPP) + WINDOWS</h4>
+        <ul>
+          <li>Takeout (Ruth): inbox 16 correos (19/11/2024 12:21:26 EST).</li>
+          <li>Búsqueda imágenes: "iphone aesthetic wallpaper" (12/11/2024).</li>
+          <li>Anuncio Kia: modelo Sorento.</li>
+          <li>Comunicación más frecuente: Mary Jones.</li>
+          <li>Gemini: zapatos Floppers, empresa TypeShirt.</li>
+          <li>Archivo de imagen del zapato: f12cb76daad6c8d1.png.</li>
+          <li>Google Account ID: 252838291214, fecha nacimiento 1998-12-18.</li>
+          <li>Última aplicación Play Store: Clash Royale.</li>
+          <li>Vídeo Pretty Little Liars: duración 29:24.</li>
+          <li>Jefe: Gregory Fields.</li>
+          <li>Sitio web marketing: Pipedrive.</li>
+          <li>Correo sospechoso: IP 185.70.40.130.</li>
+          <li>Geolocalización IP (26/09/2024): Washington, DC.</li>
+          <li>Windows: SID chick S-1-5-21-493923485-410185161-2094537482-1001, última sesión 2024-11-24 17:36:55, juego Candy Crush Saga, Reddit para programación, Python, Edge, hash WSL, steghide, sucess.txt.txt contiene "marywuzhere".</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fases de las preguntas (resumen de hallazgos) -->
+  <div class="section-block reveal">
+    <div class="section-label">03_hallazgos</div>
+    <h2 class="section-title">Evidencias clave por plataforma</h2>
+    <div class="phases">
+      <div class="phase">
+        <div class="phase-dot">01</div>
+        <div class="phase-body">
+          <h4>Android – Actividad de Mary Jones</h4>
+          <p>SMS con Ruth sobre TikTok de ciervos. Aplicación de geocaching c:geo. Búsqueda de la biblioteca de Champlain College. Usuario TikTok mary.jones7358 (0 seguidores). Conexión Bluetooth a Google Pixel Watch. Canciones escuchadas: "Lover" de Taylor Swift, "Fortnight", "Without You". Titulación académica: Associates Degree in Marketing (GPA 4.0). Foto nocturna de Moran Frame en Waterworks Park. 32 números de spam bloqueados.</p>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">02</div>
+        <div class="phase-body">
+          <h4>iOS – Actividad de Ruth Seleznyova</h4>
+          <p>iOS 18.0, teléfono +18024959063. Contacto Mary. 13 llamadas entrantes (0 contestadas). 51 palabras autocorregidas. Discord: IP 184.171.159.153, plan para quedar en Black Cap a las 2:15. Bitmoji rubio. ChatGPT primera IA. Coordenadas Nashville. Ecuación 432. Permiso micrófono denegado a Snapchat. Código descuento Zenni EARLYBF24. Vídeo TikTok publicado 2024-11-12 22:11:09 UTC. North Beach Park buscada. Dispositivo fabricado 2022-10-18. Fondo de pantalla de nicole vranjican.</p>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">03</div>
+        <div class="phase-body">
+          <h4>Chromebook – Actividad de usuario (Ruth/Mary)</h4>
+          <p>Batería 87%, touchpad ELAN 04F3, IP 172.19.70.25. Contacto Mary +18028292741. Wake source exclusivo Power Button. Mary trabajó 22 meses en GFields. Primera visita a fanfiction.net 2024-11-06. Autofill ruthonthego98@gmail.com. Anuncio de Ruth: Flopper Advertisement.jpeg (373.228 bytes). Programa TV Pretty Little Liars. Versión Krisp 253018. Juego Clash Royale. URL más visitada takeout.google.com. Deporte de Ruth: marcha atlética; campeones Caio Bonfim y María Pérez.</p>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">04</div>
+        <div class="phase-body">
+          <h4>Google Takeout y Windows</h4>
+          <p>Inbox de Ruth con 16 correos. Búsqueda "iphone aesthetic wallpaper". Anuncio Kia Sorento. Comunicación más frecuente con Mary Jones. Gemini creó "Floppers" y "TypeShirt". Archivo imagen f12cb76daad6c8d1.png. Google Account ID 252838291214, nacimiento 1998-12-18. Última app: Clash Royale. Vídeo 29:24 de Pretty Little Liars. Jefe Gregory Fields. Pipedrive visitado tras búsqueda "descarada". Correo extorsión desde IP 185.70.40.130. Geolocalización Washington DC. Windows: SID chick, Candy Crush Saga, Reddit, Python, Edge, hash WSL, steghide, archivo sucess.txt.txt con "marywuzhere".</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Herramientas utilizadas -->
+  <div class="section-block reveal">
+    <div class="section-label">04_tecnologías</div>
+    <h2 class="section-title">Herramientas forenses móviles</h2>
+    <div class="tech-grid">
+      <div class="tech-item"><span class="tech-name">ALEAPP</span><span class="tech-role">Análisis Android</span></div>
+      <div class="tech-item"><span class="tech-name">iLEAPP</span><span class="tech-role">Análisis iOS</span></div>
+      <div class="tech-item"><span class="tech-name">cLEAPP</span><span class="tech-role">Análisis Chromebook</span></div>
+      <div class="tech-item"><span class="tech-name">RLEAPP</span><span class="tech-role">Análisis Google Takeout</span></div>
+      <div class="tech-item"><span class="tech-name">Autopsy</span><span class="tech-role">Análisis de discos</span></div>
+      <div class="tech-item"><span class="tech-name">FTK Imager</span><span class="tech-role">Visualización imágenes</span></div>
+      <div class="tech-item"><span class="tech-name">SQLite Browser</span><span class="tech-role">Consultas manuales</span></div>
+      <div class="tech-item"><span class="tech-name">exiftool</span><span class="tech-role">Metadatos EXIF</span></div>
+      <div class="tech-item"><span class="tech-name">strings / grep</span><span class="tech-role">Búsqueda en binarios</span></div>
+    </div>
+  </div>
+
+  <!-- Bloque de descargas -->
+  <div class="downloads-section reveal" id="downloads">
+    <h2>📄 Documentación forense</h2>
+    <p>Writeup completo con las 66 preguntas y respuestas documentadas.</p>
+    <div class="dl-grid">
+      <div class="dl-card">
+        <div class="dl-card-icon">📱</div>
+        <div class="dl-card-title">Writeup – Análisis de dispositivos móviles</div>
+        <div class="dl-card-desc">Documento completo que responde a las 66 preguntas del caso: Android (SMS, TikTok, geocaching, GPS), iOS (versión, llamadas, Discord, Bitmoji), Chromebook (batería, IP, autofill, juegos), Google Takeout (correos, Gemini, IP extorsión) y Windows (SID, hashes, WSL).</div>
+        <a href="docs/Forense_Movil_Writeup_66_preguntas.pdf" class="dl-card-btn" download>↓ Descargar PDF writeup</a>
+        <a href="docs/Forense_Movil_Informe.pdf" class="dl-card-btn" download>↓ Descargar PDF informe</a>
+      </div>
+    </div>
+    <p style="margin-top:24px; font-size:.75rem; color:var(--muted); text-align:center;">📌 El PDF debe ubicarse en la carpeta <code>docs/</code> con el nombre mostrado. Ajusta la ruta si es necesario.</p>
+  </div>
+
+  <!-- Terminal de conclusiones -->
+  <div class="section-block reveal">
+    <div class="section-label">05_conclusiones</div>
+    <h2 class="section-title">Resultados y métricas</h2>
+    <div class="terminal">
+      <div class="term-header"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+      <div class="term-line"><span class="prompt">marina@forensics-mobile:~$</span> <span class="cmd">./evaluate_mobile_forensics.sh</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Verificación de integridad de imagen Android (MD5/SHA256).</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Extracción de conversaciones SMS, TikTok, geocaching y GPS.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Análisis iOS: versión, llamadas, Discord, Bitmoji, ChatGPT, notas.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Análisis Chromebook: batería, IP, autofill, juegos, Krisp, Pretty Little Liars.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Análisis Google Takeout: inbox, búsquedas, Gemini (Floppers, TypeShirt), correo extorsión.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Análisis Windows: SID, sesiones, aplicaciones, navegadores, hashes WSL, steghide.</span></div>
+      <div class="term-line"><span class="term-warn">[ MEJORA ] Implementar scripts automatizados con ALEAPP/iLEAPP para extracción masiva.</span></div>
+      <div class="term-line"><span class="term-warn">[ MEJORA ] Integrar timelines correlacionados entre plataformas.</span></div>
+      <div class="term-line"><span class="prompt">marina@forensics-mobile:~$</span> <span class="cmd">echo "Análisis forense multi-plataforma completado (66 preguntas)"</span></div>
+      <div class="term-line"><span class="term-success">Análisis forense multi-plataforma completado (66 preguntas)</span></div>
+      <div class="term-line"><span class="prompt">marina@forensics-mobile:~$ <span class="cursor-blink">▊</span></span></div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-box reveal">
+    <h2>¿Necesitas un análisis forense de dispositivos móviles?</h2>
+    <p>Este proyecto demuestra que domino el análisis forense de Android (ALEAPP), iOS (iLEAPP), Chromebook (cLEAPP) y Google Takeout (RLEAPP), así como la extracción de artefactos clave (SMS, llamadas, GPS, redes sociales, aplicaciones). Contacta conmigo para servicios de investigación forense en dispositivos móviles.</p>
+    <div class="cta-actions">
+      <a href="portfolio_marina.html#contact" class="btn-primary">→ Contactar</a>
+      <a href="portfolio_marina.html#portfolio" class="btn-outline">← Volver al portfolio</a>
+    </div>
+  </div>
+
+</div>
+
+<footer>MARINA DEL PILAR LÓPEZ OLIVA // ANÁLISIS FORENSE DE DISPOSITIVOS MÓVILES // 2024-2026</footer>
+
+<script>
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

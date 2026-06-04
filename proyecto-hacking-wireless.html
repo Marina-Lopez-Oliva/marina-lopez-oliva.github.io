@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hacking de redes inalámbricas · WPA2, Evil Twin, Bluetooth | Marina del Pilar López Oliva</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Fira+Code:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#06080c;--surface:#0e1117;--card:#131821;
+  --accent:#00e5a0; --accent2:#a259ff; --gold:#ffd166;
+  --red:#ff6b6b; --fire:#ff9a3c;
+  --text:#eef0f5; --muted:#6b7280; --border:#1e2530;
+  --mono:'Fira Code',monospace; --display:'Syne',sans-serif; --body:'DM Sans',sans-serif;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--body);overflow-x:hidden;line-height:1.6;}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--accent2);border-radius:2px;}
+
+nav{position:fixed;top:0;width:100%;z-index:100;background:rgba(6,8,12,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 6%;}
+.nav-inner{display:flex;justify-content:space-between;align-items:center;}
+.nav-logo{font-family:var(--mono);color:var(--accent);font-size:.85rem;letter-spacing:2px;text-decoration:none;}
+.nav-back{font-family:var(--mono);font-size:.7rem;color:var(--muted);text-decoration:none;letter-spacing:1px;transition:.2s;display:flex;align-items:center;gap:8px;}
+.nav-back:hover{color:var(--accent);}
+
+.proj-hero{min-height:55vh;display:flex;flex-direction:column;justify-content:flex-end;padding:120px 6% 60px;position:relative;overflow:hidden;}
+.proj-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 30% 50%,rgba(162,89,255,.06),transparent);}
+.proj-hero::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 50% 40% at 80% 50%,rgba(0,229,160,.04),transparent);}
+.hero-content{position:relative;z-index:1;max-width:1200px;margin:0 auto;width:100%;}
+.proj-badge{font-family:var(--mono);font-size:.65rem;color:var(--accent2);border:1px solid rgba(162,89,255,.3);padding:5px 14px;border-radius:2px;letter-spacing:2px;display:inline-block;margin-bottom:20px;background:rgba(162,89,255,.06);}
+.proj-hero h1{font-family:var(--display);font-size:clamp(2.2rem,6vw,5rem);font-weight:800;letter-spacing:-2px;line-height:.95;margin-bottom:20px;}
+.proj-hero h1 span{color:var(--accent2);}
+.proj-meta{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:32px;}
+.meta-item{font-family:var(--mono);font-size:.7rem;color:var(--muted);letter-spacing:1px;display:flex;align-items:center;gap:6px;}
+.meta-item span{color:var(--text);}
+.hero-tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:40px;}
+.tag{font-family:var(--mono);font-size:.6rem;color:var(--accent);border:1px solid rgba(0,229,160,.25);padding:4px 10px;border-radius:2px;letter-spacing:1px;}
+.tag.purple{color:var(--accent2);border-color:rgba(162,89,255,.25);}
+.tag.gold{color:var(--gold);border-color:rgba(255,209,102,.25);}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--accent2);color:#fff;font-family:var(--mono);font-size:.78rem;font-weight:600;padding:12px 28px;border-radius:3px;text-decoration:none;letter-spacing:1px;transition:.2s;}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(162,89,255,.25);}
+.btn-outline{display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--text);font-family:var(--mono);font-size:.78rem;padding:12px 28px;border-radius:3px;text-decoration:none;letter-spacing:1px;border:1px solid var(--border);transition:.2s;}
+.btn-outline:hover{border-color:var(--accent2);color:var(--accent2);}
+
+.divider{height:1px;background:var(--border);}
+.content{max-width:1200px;margin:0 auto;padding:70px 6%;}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:70px;}
+.summary-card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:24px;position:relative;overflow:hidden;}
+.summary-card::before{content:'';position:absolute;bottom:0;left:0;width:100%;height:2px;background:var(--accent2);}
+.summary-card.gold::before{background:var(--gold);}
+.summary-card.purple::before{background:var(--accent2);}
+.summary-label{font-family:var(--mono);font-size:.6rem;color:var(--muted);letter-spacing:2px;margin-bottom:10px;}
+.summary-value{font-family:var(--display);font-size:1.4rem;font-weight:800;color:var(--text);}
+.summary-sub{font-size:.8rem;color:var(--muted);margin-top:4px;}
+
+.section-block{margin-bottom:60px;}
+.section-label{font-family:var(--mono);color:var(--accent2);font-size:.7rem;letter-spacing:4px;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.section-title{font-family:var(--display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;margin-bottom:20px;}
+.prose{color:var(--muted);font-size:.97rem;line-height:1.9;}
+.prose strong{color:var(--text);}
+.prose p{margin-bottom:14px;}
+
+.arch-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px;}
+.arch-block{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px 24px;}
+.arch-block h4{font-family:var(--mono);font-size:.72rem;color:var(--accent2);letter-spacing:2px;margin-bottom:12px;}
+.arch-block ul{list-style:none;display:flex;flex-direction:column;gap:8px;}
+.arch-block ul li{font-size:.85rem;color:var(--muted);display:flex;align-items:flex-start;gap:10px;line-height:1.5;}
+.arch-block ul li::before{content:'›';color:var(--accent2);flex-shrink:0;margin-top:1px;}
+
+.phases{display:flex;flex-direction:column;gap:0;margin-top:24px;position:relative;}
+.phases::before{content:'';position:absolute;left:18px;top:0;bottom:0;width:1px;background:var(--border);}
+.phase{display:flex;gap:28px;padding-bottom:32px;position:relative;}
+.phase-dot{width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.65rem;color:var(--accent2);flex-shrink:0;position:relative;z-index:1;}
+.phase-body{flex:1;padding-top:6px;}
+.phase-body h4{font-family:var(--display);font-size:1rem;font-weight:700;margin-bottom:6px;}
+.phase-body p{font-size:.85rem;color:var(--muted);line-height:1.7;}
+.phase-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.phase-tag{font-family:var(--mono);font-size:.58rem;color:var(--muted);border:1px solid var(--border);padding:2px 7px;border-radius:2px;}
+
+.problem-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px;}
+.problem-card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px;}
+.problem-card h4{font-family:var(--mono);font-size:.68rem;color:rgba(255,80,80,.8);letter-spacing:1px;margin-bottom:8px;}
+.problem-card p{font-size:.83rem;color:var(--muted);line-height:1.6;}
+.solution-card{background:var(--card);border:1px solid rgba(162,89,255,.15);border-radius:6px;padding:20px;}
+.solution-card h4{font-family:var(--mono);font-size:.68rem;color:var(--accent2);letter-spacing:1px;margin-bottom:8px;}
+.solution-card p{font-size:.83rem;color:var(--muted);line-height:1.6;}
+
+.tech-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:24px;}
+.tech-item{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:14px;text-align:center;}
+.tech-item .tech-name{font-family:var(--mono);font-size:.72rem;color:var(--text);display:block;margin-top:6px;}
+.tech-item .tech-role{font-family:var(--mono);font-size:.58rem;color:var(--muted);display:block;margin-top:3px;}
+
+.downloads-section{background:var(--card);border:1px solid rgba(162,89,255,.2);border-radius:8px;padding:40px;margin-top:70px;}
+.downloads-section h2{font-family:var(--display);font-size:clamp(1.4rem,3vw,2rem);font-weight:800;letter-spacing:-1px;margin-bottom:8px;}
+.downloads-section p{color:var(--muted);font-size:.9rem;margin-bottom:32px;max-width:500px;}
+.dl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+.dl-card{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:10px;transition:.2s;}
+.dl-card:hover{border-color:rgba(162,89,255,.3);}
+.dl-card-icon{font-size:1.6rem;}
+.dl-card-title{font-family:var(--display);font-size:.95rem;font-weight:700;}
+.dl-card-desc{font-size:.78rem;color:var(--muted);line-height:1.5;flex:1;}
+.dl-card-btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:.65rem;color:var(--accent2);text-decoration:none;letter-spacing:1px;padding:7px 12px;border:1px solid rgba(162,89,255,.3);border-radius:2px;transition:.2s;width:fit-content;}
+.dl-card-btn:hover{background:rgba(162,89,255,.08);}
+
+.terminal{background:#080c10;border:1px solid var(--border);border-radius:6px;padding:20px 24px;font-family:var(--mono);font-size:.8rem;line-height:2;margin-top:24px;}
+.term-header{display:flex;gap:6px;margin-bottom:16px;}
+.dot{width:10px;height:10px;border-radius:50%;}
+.dot-r{background:#ff5f57;}.dot-y{background:#febc2e;}.dot-g{background:#28c840;}
+.term-line{color:var(--muted);}
+.term-line .prompt{color:var(--accent);}
+.term-line .cmd{color:var(--text);}
+.term-line .out{color:#6b8fa3;}
+.term-success{color:var(--accent);font-weight:bold;}
+.term-warn{color:var(--gold);}
+.cursor-blink{animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+
+.cta-box{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:48px;text-align:center;margin-top:70px;position:relative;overflow:hidden;}
+.cta-box::before{content:'';position:absolute;top:-50%;left:50%;transform:translateX(-50%);width:400px;height:400px;background:radial-gradient(circle,rgba(162,89,255,.04),transparent 70%);}
+.cta-box h2{font-family:var(--display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;margin-bottom:12px;}
+.cta-box p{color:var(--muted);font-size:.93rem;max-width:480px;margin:0 auto 28px;}
+.cta-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+
+footer{text-align:center;padding:32px;color:var(--muted);font-family:var(--mono);font-size:.65rem;letter-spacing:2px;border-top:1px solid var(--border);margin-top:0;}
+
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+
+@media(max-width:900px){
+  .summary-grid{grid-template-columns:1fr 1fr;}
+  .arch-grid{grid-template-columns:1fr;}
+  .problem-grid{grid-template-columns:1fr;}
+  .proj-hero h1{font-size:2.2rem;}
+  .cta-box{padding:36px 24px;}
+}
+@media(max-width:600px){
+  .summary-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="portfolio_marina.html" class="nav-logo">MPLO://sec</a>
+    <a href="portfolio_marina.html#portfolio" class="nav-back">← Volver al portfolio</a>
+  </div>
+</nav>
+
+<section class="proj-hero">
+  <div class="hero-content">
+    <span class="proj-badge">PROYECTO INTEGRADOR · 3 ACTIVIDADES</span>
+    <h1>Hacking de redes inalámbricas<br><span>WPA2, Evil Twin y Bluetooth</span></h1>
+    <div class="proj-meta">
+      <div class="meta-item">WIFI: <span>Captura de handshake · Ataque DeAuth · Cracking con crunch/rockyou</span></div>
+      <div class="meta-item">EVIL TWIN: <span>Airgeddon · WifiPhisher · LilyGo T-Embed CC1101 Plus</span></div>
+      <div class="meta-item">BLUETOOTH: <span>BLE, canales, FHSS, ataque de replay, btlejack</span></div>
+      <div class="meta-item">AÑO: <span>2026</span></div>
+    </div>
+    <div class="hero-tags">
+      <span class="tag purple">WPA2 handshake</span>
+      <span class="tag purple">aireplay-ng DeAuth</span>
+      <span class="tag purple">aircrack-ng</span>
+      <span class="tag gold">Evil Twin + portal cautivo</span>
+      <span class="tag">Airgeddon</span>
+      <span class="tag">BLE · FHSS</span>
+    </div>
+    <div class="hero-actions">
+      <a href="#downloads" class="btn-primary">↓ Descargar memorias</a>
+      <a href="portfolio_marina.html#portfolio" class="btn-outline">← Ver más proyectos</a>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<div class="content">
+
+  <!-- Resumen rápido -->
+  <div class="summary-grid reveal">
+    <div class="summary-card">
+      <div class="summary-label">ACTIVIDADES</div>
+      <div class="summary-value">3</div>
+      <div class="summary-sub">WPA2 cracking · Evil Twin / Fake AP · Bluetooth hacking</div>
+    </div>
+    <div class="summary-card gold">
+      <div class="summary-label">CONTRASEÑAS OBTENIDAS</div>
+      <div class="summary-value">2</div>
+      <div class="summary-sub">33ab534d (crunch) · spongebob (rockyou)</div>
+    </div>
+    <div class="summary-card purple">
+      <div class="summary-label">HARDWARE</div>
+      <div class="summary-value">LilyGo T-Embed CC1101</div>
+      <div class="summary-sub">Firmware Bruce · Evil Portal</div>
+    </div>
+  </div>
+
+  <!-- Contexto -->
+  <div class="section-block reveal">
+    <div class="section-label">01_contexto</div>
+    <h2 class="section-title">Auditoría de seguridad inalámbrica: WiFi y Bluetooth</h2>
+    <div class="prose">
+      <p>Este proyecto agrupa tres actividades de hacking enfocadas en redes inalámbricas: <strong>cracking de WPA2</strong> mediante captura de handshake y ataques de diccionario, <strong>ataque Evil Twin (gemelo malvado)</strong> con portal cautivo usando Airgeddon y WifiPhisher, y una introducción teórica al <strong>hacking de Bluetooth Low Energy (BLE)</strong>.</p>
+      <p>En la parte de WiFi se ha trabajado con una tarjeta Realtek RTL8188RU en modo monitor, capturando el 4-way handshake de dos puntos de acceso (HackMe2 y hackmywifi). Para el cracking se generó un wordlist personalizado con crunch (charset 1345abd, longitud 8) y se usó el diccionario rockyou.txt, obteniendo las contraseñas <code>33ab534d</code> y <code>spongebob</code> respectivamente.</p>
+      <p>En el ataque Evil Twin se utilizó Airgeddon para crear un AP falso con el mismo SSID que el legítimo (ASUS_Primera_Fila), enviar paquetes de desautenticación y levantar un portal cautivo en español. La víctima introdujo la contraseña <code>admin1234</code>, quedando registrada. También se exploró WifiPhisher y el hardware LilyGo T-Embed CC1101 Plus con firmware Bruce, capaz de ejecutar evil portals de forma autónoma.</p>
+      <p>Finalmente, la actividad de Bluetooth cubre conceptos teóricos: canales BLE, advertising, Frequency Hopping Spread Spectrum (FHSS), roles (central/peripheral), ataques de replay y herramientas como btlejack y Bettercap.</p>
+    </div>
+  </div>
+
+  <!-- Arquitectura de técnicas -->
+  <div class="section-block reveal">
+    <div class="section-label">02_técnicas</div>
+    <h2 class="section-title">Vulnerabilidades y técnicas explotadas</h2>
+    <div class="arch-grid">
+      <div class="arch-block">
+        <h4>WPA2 HANDSHAKE CRACKING (Actividad 26)</h4>
+        <ul>
+          <li>Modo monitor con airmon-ng (wlan0).</li>
+          <li>Escaneo de redes con airodump-ng.</li>
+          <li>Captura dirigida hacia AP objetivo (HackMe2 y hackmywifi).</li>
+          <li>Ataque de desautenticación (aireplay-ng -0) para forzar reconexión y capturar handshake.</li>
+          <li>Generación de wordlist personalizado con crunch (charset: 1345abd, longitud 8, 5.764.801 combinaciones).</li>
+          <li>Cracking con aircrack-ng: contraseña 33ab534d para HackMe2, spongebob para hackmywifi (rockyou).</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>EVIL TWIN + PORTAL CAUTIVO (Actividad 27)</h4>
+        <ul>
+          <li>Airgeddon: selección de interfaz, escaneo de APs con clientes.</li>
+          <li>Captura de handshake del AP objetivo (ASUS_Primera_Fila) mediante DeAuth con mdk4.</li>
+          <li>Levantamiento de AP falso con mismo ESSID, servidor DHCP, DNS (dnsmasq) y portal cautivo en español.</li>
+          <li>La víctima introduce la contraseña real; Airgeddon la valida contra el handshake y la guarda (admin1234).</li>
+          <li>WifiPhisher (intento con OAuth Login Page, problemas de compatibilidad).</li>
+          <li>Hardware LilyGo T-Embed CC1101 Plus con firmware Bruce: evil portal personalizado (imitando Aules).</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>BLUETOOTH LOW ENERGY (BLE) (Actividad 28)</h4>
+        <ul>
+          <li>Canales: 3 de advertising (37,38,39) + 37 de datos (0-36). Separación 2 MHz.</li>
+          <li>Frecuencia: banda ISM 2.4 GHz (2400-2483.5 MHz).</li>
+          <li>Frequency Hopping Spread Spectrum (FHSS): saltos para evitar interferencias y añadir capa de seguridad.</li>
+          <li>Roles: Broadcaster, Observer, Peripheral, Central.</li>
+          <li>Ataque de replay: captura de paquete legítimo y reinyección. Herramientas: btlejack, Bettercap, GATTacker.</li>
+          <li>Comandos: btlejack -c any, hciconfig hci0 txpower, set ble.tx.power.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fases de implementación -->
+  <div class="section-block reveal">
+    <div class="section-label">03_implementación</div>
+    <h2 class="section-title">Resumen de actividades realizadas</h2>
+    <div class="phases">
+      <div class="phase">
+        <div class="phase-dot">26</div>
+        <div class="phase-body">
+          <h4>WPA2 WiFi Hacking</h4>
+          <p>Preparación del entorno: airmon-ng check kill, airmon-ng start wlan0. Escaneo con airodump-ng para identificar APs. Captura dirigida sobre HackMe2 (canal 6, BSSID 38:72:C0:C8:8B:E6) y hackmywifi (canal 1, BSSID 00:25:69:67:9E:59). Ataque DeAuth con aireplay-ng para forzar el handshake. Generación de wordlist con crunch: <code>crunch 8 8 1345abd -o hackme2.txt</code> (5.7M líneas, 49 MB). Cracking con aircrack-ng: contraseña 33ab534d encontrada tras 922.768 claves. Para hackmywifi, uso de rockyou.txt: contraseña spongebob encontrada en segundos.</p>
+          <div class="phase-tags"><span class="phase-tag">airodump-ng</span><span class="phase-tag">aireplay-ng</span><span class="phase-tag">crunch</span><span class="phase-tag">aircrack-ng</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">27</div>
+        <div class="phase-body">
+          <h4>Evil Twin Attack + Fake AP (Airgeddon, WifiPhisher, LilyGo)</h4>
+          <p>Preparación: interfaz wlan0 en modo monitor. Airgeddon: opción 7 (Evil Twin) → opción 9 (portal cautivo). Selección del AP ASUS_Primera_Fila (BSSID E8:9C:25:17:ED:F8, canal 3). Captura de handshake con mdk4. Configuración del portal cautivo en español. Lanzamiento del ataque: AP falso, DHCP, DNS, DeAuth continuo. La víctima se conecta al AP falso, recibe IP (192.168.1.33/34) y es redirigida al portal. Introduce contraseña admin1234. Airgeddon la valida y la guarda en <code>evil_twin_captive_portal_password-ASUS_Primera_Fila.txt</code>. WifiPhisher: intento fallido por problemas de compatibilidad con Python 3.13. LilyGo T-Embed CC1101 Plus: firmware Bruce, creación de evil portal personalizado (imitando Aules).</p>
+          <div class="phase-tags"><span class="phase-tag">Airgeddon</span><span class="phase-tag">mdk4</span><span class="phase-tag">portal cautivo</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">28</div>
+        <div class="phase-body">
+          <h4>Hacking Bluetooth (BLE)</h4>
+          <p>Estudio teórico de Bluetooth Low Energy: canales de advertising (37,38,39) y datos (0-36), separación 2 MHz. Banda ISM 2.4 GHz. Frequency Hopping Spread Spectrum (FHSS): salto de canales para evitar interferencias y dificultar el sniffing. Roles: Broadcaster, Observer, Peripheral, Central. Ataque de replay: captura y reinyección de paquetes. Herramientas: btlejack, Bettercap, GATTacker. Comandos: <code>btlejack -c any</code>, <code>hciconfig hci0 txpower 4</code>, <code>set ble.tx.power 4</code>. Dispositivos óptimos para capturar advertising: 3 Micro:Bit (uno por canal).</p>
+          <div class="phase-tags"><span class="phase-tag">BLE</span><span class="phase-tag">FHSS</span><span class="phase-tag">replay</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Problemas y soluciones / hallazgos -->
+  <div class="section-block reveal">
+    <div class="section-label">04_hallazgos</div>
+    <h2 class="section-title">Lecciones aprendidas y vectores críticos</h2>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <h4>Vulnerabilidad DeAuth en WPA2</h4>
+        <p>El ataque de desautenticación (aireplay-ng) es posible porque las tramas de gestión no están cifradas en WPA2. Permite forzar reconexiones y capturar el handshake.</p>
+      </div>
+      <div class="solution-card">
+        <h4>MITIGACIÓN</h4>
+        <p>WPA3 implementa Protected Management Frames (PMF) que cifran las tramas DeAuth. En WPA2, usar PMF si el hardware lo soporta y monitorear alertas de DeAuth.</p>
+      </div>
+      <div class="problem-card">
+        <h4>Contraseñas débiles en diccionarios</h4>
+        <p>La contraseña "spongebob" se encontró en segundos con rockyou.txt. Usuario no técnico reutiliza palabras comunes.</p>
+      </div>
+      <div class="solution-card">
+        <h4>MITIGACIÓN</h4>
+        <p>Políticas de contraseñas largas (>12 caracteres), aleatorias y generadas con gestor. Evitar palabras de diccionario.</p>
+      </div>
+      <div class="problem-card">
+        <h4>Evil Twin + portal cautivo</h4>
+        <p>El usuario medio no verifica el certificado del portal ni sospecha de una red abierta con el mismo SSID que su WiFi habitual.</p>
+      </div>
+      <div class="solution-card">
+        <h4>MITIGACIÓN</h4>
+        <p>Configurar dispositivos para no conectarse automáticamente a redes abiertas, usar VPN, educar a los usuarios sobre portales cautivos falsos.</p>
+      </div>
+      <div class="problem-card">
+        <h4>BLE sin autenticación en advertising</h4>
+        <p>Los canales de advertising son públicos y no cifrados. Un atacante puede esnifar paquetes y realizar ataques de replay.</p>
+      </div>
+      <div class="solution-card">
+        <h4>MITIGACIÓN</h4>
+        <p>Usar emparejamiento seguro (Secure Connections) y cifrado en los datos. Para dispositivos críticos, evitar el uso de BLE sin protección adicional.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stack tecnológico -->
+  <div class="section-block reveal">
+    <div class="section-label">05_tecnologías</div>
+    <h2 class="section-title">Herramientas y hardware utilizado</h2>
+    <div class="tech-grid">
+      <div class="tech-item"><span class="tech-name">airmon-ng</span><span class="tech-role">Modo monitor</span></div>
+      <div class="tech-item"><span class="tech-name">airodump-ng</span><span class="tech-role">Escaneo AP</span></div>
+      <div class="tech-item"><span class="tech-name">aireplay-ng</span><span class="tech-role">Ataque DeAuth</span></div>
+      <div class="tech-item"><span class="tech-name">aircrack-ng</span><span class="tech-role">Cracking handshake</span></div>
+      <div class="tech-item"><span class="tech-name">crunch</span><span class="tech-role">Generación wordlist</span></div>
+      <div class="tech-item"><span class="tech-name">Airgeddon</span><span class="tech-role">Evil Twin + portal</span></div>
+      <div class="tech-item"><span class="tech-name">WifiPhisher</span><span class="tech-role">Fake AP</span></div>
+      <div class="tech-item"><span class="tech-name">LilyGo T-Embed CC1101</span><span class="tech-role">Hardware Red Team</span></div>
+      <div class="tech-item"><span class="tech-name">Bruce Firmware</span><span class="tech-role">Evil portal autónomo</span></div>
+      <div class="tech-item"><span class="tech-name">btlejack</span><span class="tech-role">Sniffing BLE</span></div>
+      <div class="tech-item"><span class="tech-name">Bettercap</span><span class="tech-role">Replay y MITM BLE</span></div>
+    </div>
+  </div>
+
+  <!-- Bloque de descargas -->
+  <div class="downloads-section reveal" id="downloads">
+    <h2>📄 Memorias completas</h2>
+    <p>Documentación de las tres actividades de hacking inalámbrico.</p>
+    <div class="dl-grid">
+      <div class="dl-card">
+        <div class="dl-card-icon">📶</div>
+        <div class="dl-card-title">Actividad 26 – WPA2 WiFi Hacking</div>
+        <div class="dl-card-desc">Captura de handshake con airodump-ng, ataque DeAuth, generación de wordlist con crunch y cracking con aircrack-ng. Contraseñas: 33ab534d y spongebob.</div>
+        <a href="docs/Actividad26_WPA2_Hacking.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">🎭</div>
+        <div class="dl-card-title">Actividad 27 – Evil Twin + Fake AP</div>
+        <div class="dl-card-desc">Ataque con Airgeddon (portal cautivo, handshake, DeAuth con mdk4). WifiPhisher. Hardware LilyGo T-Embed CC1101 Plus con firmware Bruce y evil portal personalizado (Aules).</div>
+        <a href="docs/Actividad27_Evil_Twin.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">🔵</div>
+        <div class="dl-card-title">Actividad 28 – Hacking Bluetooth</div>
+        <div class="dl-card-desc">Conceptos BLE: canales, advertising, FHSS, roles, ataque de replay. Herramientas: btlejack, Bettercap. Comandos y hardware Micro:Bit.</div>
+        <a href="docs/Actividad28_Bluetooth_Hacking.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+    </div>
+    <p style="margin-top:24px; font-size:.75rem; color:var(--muted); text-align:center;">📌 Los PDFs deben ubicarse en la carpeta <code>docs/</code> con los nombres mostrados. Ajusta las rutas según tu estructura real.</p>
+  </div>
+
+  <!-- Terminal de conclusiones -->
+  <div class="section-block reveal">
+    <div class="section-label">06_conclusiones</div>
+    <h2 class="section-title">Resultados y métricas</h2>
+    <div class="terminal">
+      <div class="term-header"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+      <div class="term-line"><span class="prompt">marina@wireless:~$</span> <span class="cmd">./evaluate_wifi_ble.sh</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Handshake WPA2 capturado de dos APs (HackMe2 y hackmywifi).</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Contraseña 33ab534d obtenida con wordlist de crunch (922.768 intentos).</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Contraseña spongebob obtenida con rockyou.txt (187 intentos).</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Ataque Evil Twin con Airgeddon: portal cautivo en español, captura de contraseña admin1234.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Hardware LilyGo T-Embed CC1101 Plus con firmware Bruce operativo (evil portal personalizado).</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Teoría BLE cubierta: canales, FHSS, roles, ataques de replay.</span></div>
+      <div class="term-line"><span class="term-warn">[ MEJORA ] WifiPhisher no funcionó por incompatibilidad con Python 3.13; se recomienda usar entorno virtual o versión anterior.</span></div>
+      <div class="term-line"><span class="term-warn">[ MEJORA ] En entornos reales, usar PMF (WPA3) y educación de usuarios para evitar Evil Twin.</span></div>
+      <div class="term-line"><span class="prompt">marina@wireless:~$</span> <span class="cmd">echo "Hacking inalámbrico completo: WiFi y Bluetooth"</span></div>
+      <div class="term-line"><span class="term-success">Hacking inalámbrico completo: WiFi y Bluetooth</span></div>
+      <div class="term-line"><span class="prompt">marina@wireless:~$ <span class="cursor-blink">▊</span></span></div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-box reveal">
+    <h2>¿Necesitas auditar la seguridad de tu red inalámbrica?</h2>
+    <p>Este proyecto demuestra que domino las técnicas de auditoría WiFi (captura de handshake, cracking, Evil Twin) y conozco los fundamentos de seguridad en Bluetooth Low Energy. Contacta conmigo para realizar pruebas de penetración en redes inalámbricas corporativas.</p>
+    <div class="cta-actions">
+      <a href="portfolio_marina.html#contact" class="btn-primary">→ Contactar</a>
+      <a href="portfolio_marina.html#portfolio" class="btn-outline">← Volver al portfolio</a>
+    </div>
+  </div>
+
+</div>
+
+<footer>MARINA DEL PILAR LÓPEZ OLIVA // HACKING DE REDES INALÁMBRICAS // 2026</footer>
+
+<script>
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

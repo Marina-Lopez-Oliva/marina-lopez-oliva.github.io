@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PKI, certificados y autenticación centralizada · RADIUS + LDAP | Marina del Pilar López Oliva</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Fira+Code:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#06080c;--surface:#0e1117;--card:#131821;
+  --accent:#00e5a0; --accent2:#a259ff; --gold:#ffd166;
+  --red:#ff6b6b; --fire:#ff9a3c;
+  --text:#eef0f5; --muted:#6b7280; --border:#1e2530;
+  --mono:'Fira Code',monospace; --display:'Syne',sans-serif; --body:'DM Sans',sans-serif;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--body);overflow-x:hidden;line-height:1.6;}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--accent);border-radius:2px;}
+
+nav{position:fixed;top:0;width:100%;z-index:100;background:rgba(6,8,12,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 6%;}
+.nav-inner{display:flex;justify-content:space-between;align-items:center;}
+.nav-logo{font-family:var(--mono);color:var(--accent);font-size:.85rem;letter-spacing:2px;text-decoration:none;}
+.nav-back{font-family:var(--mono);font-size:.7rem;color:var(--muted);text-decoration:none;letter-spacing:1px;transition:.2s;display:flex;align-items:center;gap:8px;}
+.nav-back:hover{color:var(--accent);}
+
+.proj-hero{min-height:55vh;display:flex;flex-direction:column;justify-content:flex-end;padding:120px 6% 60px;position:relative;overflow:hidden;}
+.proj-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 30% 50%,rgba(0,229,160,.06),transparent);}
+.proj-hero::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 50% 40% at 80% 50%,rgba(162,89,255,.04),transparent);}
+.hero-content{position:relative;z-index:1;max-width:1200px;margin:0 auto;width:100%;}
+.proj-badge{font-family:var(--mono);font-size:.65rem;color:var(--accent);border:1px solid rgba(0,229,160,.3);padding:5px 14px;border-radius:2px;letter-spacing:2px;display:inline-block;margin-bottom:20px;background:rgba(0,229,160,.06);}
+.proj-hero h1{font-family:var(--display);font-size:clamp(2.2rem,6vw,5rem);font-weight:800;letter-spacing:-2px;line-height:.95;margin-bottom:20px;}
+.proj-hero h1 span{color:var(--accent);}
+.proj-meta{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:32px;}
+.meta-item{font-family:var(--mono);font-size:.7rem;color:var(--muted);letter-spacing:1px;display:flex;align-items:center;gap:6px;}
+.meta-item span{color:var(--text);}
+.hero-tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:40px;}
+.tag{font-family:var(--mono);font-size:.6rem;color:var(--accent);border:1px solid rgba(0,229,160,.25);padding:4px 10px;border-radius:2px;letter-spacing:1px;}
+.tag.purple{color:var(--accent2);border-color:rgba(162,89,255,.25);}
+.tag.gold{color:var(--gold);border-color:rgba(255,209,102,.25);}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#000;font-family:var(--mono);font-size:.78rem;font-weight:600;padding:12px 28px;border-radius:3px;text-decoration:none;letter-spacing:1px;transition:.2s;}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,229,160,.25);}
+.btn-outline{display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--text);font-family:var(--mono);font-size:.78rem;padding:12px 28px;border-radius:3px;text-decoration:none;letter-spacing:1px;border:1px solid var(--border);transition:.2s;}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent);}
+
+.divider{height:1px;background:var(--border);}
+.content{max-width:1200px;margin:0 auto;padding:70px 6%;}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:70px;}
+.summary-card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:24px;position:relative;overflow:hidden;}
+.summary-card::before{content:'';position:absolute;bottom:0;left:0;width:100%;height:2px;background:var(--accent);}
+.summary-card.gold::before{background:var(--gold);}
+.summary-card.purple::before{background:var(--accent2);}
+.summary-label{font-family:var(--mono);font-size:.6rem;color:var(--muted);letter-spacing:2px;margin-bottom:10px;}
+.summary-value{font-family:var(--display);font-size:1.4rem;font-weight:800;color:var(--text);}
+.summary-sub{font-size:.8rem;color:var(--muted);margin-top:4px;}
+
+.section-block{margin-bottom:60px;}
+.section-label{font-family:var(--mono);color:var(--accent);font-size:.7rem;letter-spacing:4px;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.section-title{font-family:var(--display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;margin-bottom:20px;}
+.prose{color:var(--muted);font-size:.97rem;line-height:1.9;}
+.prose strong{color:var(--text);}
+.prose p{margin-bottom:14px;}
+
+.arch-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px;}
+.arch-block{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px 24px;}
+.arch-block h4{font-family:var(--mono);font-size:.72rem;color:var(--accent);letter-spacing:2px;margin-bottom:12px;}
+.arch-block ul{list-style:none;display:flex;flex-direction:column;gap:8px;}
+.arch-block ul li{font-size:.85rem;color:var(--muted);display:flex;align-items:flex-start;gap:10px;line-height:1.5;}
+.arch-block ul li::before{content:'›';color:var(--accent);flex-shrink:0;margin-top:1px;}
+
+.phases{display:flex;flex-direction:column;gap:0;margin-top:24px;position:relative;}
+.phases::before{content:'';position:absolute;left:18px;top:0;bottom:0;width:1px;background:var(--border);}
+.phase{display:flex;gap:28px;padding-bottom:32px;position:relative;}
+.phase-dot{width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.65rem;color:var(--accent);flex-shrink:0;position:relative;z-index:1;}
+.phase-body{flex:1;padding-top:6px;}
+.phase-body h4{font-family:var(--display);font-size:1rem;font-weight:700;margin-bottom:6px;}
+.phase-body p{font-size:.85rem;color:var(--muted);line-height:1.7;}
+.phase-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.phase-tag{font-family:var(--mono);font-size:.58rem;color:var(--muted);border:1px solid var(--border);padding:2px 7px;border-radius:2px;}
+
+.problem-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px;}
+.problem-card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px;}
+.problem-card h4{font-family:var(--mono);font-size:.68rem;color:rgba(255,80,80,.8);letter-spacing:1px;margin-bottom:8px;}
+.problem-card p{font-size:.83rem;color:var(--muted);line-height:1.6;}
+.solution-card{background:var(--card);border:1px solid rgba(0,229,160,.15);border-radius:6px;padding:20px;}
+.solution-card h4{font-family:var(--mono);font-size:.68rem;color:var(--accent);letter-spacing:1px;margin-bottom:8px;}
+.solution-card p{font-size:.83rem;color:var(--muted);line-height:1.6;}
+
+.tech-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:24px;}
+.tech-item{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:14px;text-align:center;}
+.tech-item .tech-name{font-family:var(--mono);font-size:.72rem;color:var(--text);display:block;margin-top:6px;}
+.tech-item .tech-role{font-family:var(--mono);font-size:.58rem;color:var(--muted);display:block;margin-top:3px;}
+
+.downloads-section{background:var(--card);border:1px solid rgba(0,229,160,.2);border-radius:8px;padding:40px;margin-top:70px;}
+.downloads-section h2{font-family:var(--display);font-size:clamp(1.4rem,3vw,2rem);font-weight:800;letter-spacing:-1px;margin-bottom:8px;}
+.downloads-section p{color:var(--muted);font-size:.9rem;margin-bottom:32px;max-width:500px;}
+.dl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+.dl-card{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:10px;transition:.2s;}
+.dl-card:hover{border-color:rgba(0,229,160,.3);}
+.dl-card-icon{font-size:1.6rem;}
+.dl-card-title{font-family:var(--display);font-size:.95rem;font-weight:700;}
+.dl-card-desc{font-size:.78rem;color:var(--muted);line-height:1.5;flex:1;}
+.dl-card-btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:.65rem;color:var(--accent);text-decoration:none;letter-spacing:1px;padding:7px 12px;border:1px solid rgba(0,229,160,.3);border-radius:2px;transition:.2s;width:fit-content;}
+.dl-card-btn:hover{background:rgba(0,229,160,.08);}
+
+.terminal{background:#080c10;border:1px solid var(--border);border-radius:6px;padding:20px 24px;font-family:var(--mono);font-size:.8rem;line-height:2;margin-top:24px;}
+.term-header{display:flex;gap:6px;margin-bottom:16px;}
+.dot{width:10px;height:10px;border-radius:50%;}
+.dot-r{background:#ff5f57;}.dot-y{background:#febc2e;}.dot-g{background:#28c840;}
+.term-line{color:var(--muted);}
+.term-line .prompt{color:var(--accent);}
+.term-line .cmd{color:var(--text);}
+.term-line .out{color:#6b8fa3;}
+.term-success{color:var(--accent);font-weight:bold;}
+.term-warn{color:var(--gold);}
+.cursor-blink{animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+
+.cta-box{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:48px;text-align:center;margin-top:70px;position:relative;overflow:hidden;}
+.cta-box::before{content:'';position:absolute;top:-50%;left:50%;transform:translateX(-50%);width:400px;height:400px;background:radial-gradient(circle,rgba(0,229,160,.04),transparent 70%);}
+.cta-box h2{font-family:var(--display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;margin-bottom:12px;}
+.cta-box p{color:var(--muted);font-size:.93rem;max-width:480px;margin:0 auto 28px;}
+.cta-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+
+footer{text-align:center;padding:32px;color:var(--muted);font-family:var(--mono);font-size:.65rem;letter-spacing:2px;border-top:1px solid var(--border);margin-top:0;}
+
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+
+@media(max-width:900px){
+  .summary-grid{grid-template-columns:1fr 1fr;}
+  .arch-grid{grid-template-columns:1fr;}
+  .problem-grid{grid-template-columns:1fr;}
+  .proj-hero h1{font-size:2.2rem;}
+  .cta-box{padding:36px 24px;}
+}
+@media(max-width:600px){
+  .summary-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="portfolio_marina.html" class="nav-logo">MPLO://sec</a>
+    <a href="portfolio_marina.html#portfolio" class="nav-back">← Volver al portfolio</a>
+  </div>
+</nav>
+
+<section class="proj-hero">
+  <div class="hero-content">
+    <span class="proj-badge">PROYECTO INTEGRADOR · 3 PRÁCTICAS</span>
+    <h1>Infraestructura de autenticación y PKI<br><span>RADIUS + LDAP + certificados</span></h1>
+    <div class="proj-meta">
+      <div class="meta-item">PKI: <span>Easy-RSA · CA Raíz e Intermedia · OCSP</span></div>
+      <div class="meta-item">RADIUS: <span>FreeRADIUS + OpenLDAP · WPA2-Enterprise</span></div>
+      <div class="meta-item">WEB: <span>Apache con certificados · HTTPS · OCSP Stapling</span></div>
+      <div class="meta-item">AÑO: <span>2025-2026</span></div>
+    </div>
+    <div class="hero-tags">
+      <span class="tag">PKI corporativa</span>
+      <span class="tag">Easy-RSA</span>
+      <span class="tag">Certificados X.509</span>
+      <span class="tag purple">FreeRADIUS</span>
+      <span class="tag">OpenLDAP</span>
+      <span class="tag gold">WPA2-Enterprise</span>
+      <span class="tag">OCSP Stapling</span>
+    </div>
+    <div class="hero-actions">
+      <a href="#downloads" class="btn-primary">↓ Descargar memorias</a>
+      <a href="portfolio_marina.html#portfolio" class="btn-outline">← Ver más proyectos</a>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<div class="content">
+
+  <!-- Resumen rápido -->
+  <div class="summary-grid reveal">
+    <div class="summary-card">
+      <div class="summary-label">PRÁCTICAS AGRUPADAS</div>
+      <div class="summary-value">3</div>
+      <div class="summary-sub">PKI · HTTPS · RADIUS + LDAP + WiFi Enterprise</div>
+    </div>
+    <div class="summary-card gold">
+      <div class="summary-label">PKI COMPLETA</div>
+      <div class="summary-value">CA Raíz + Intermedia</div>
+      <div class="summary-sub">Firmado de certificados · CRL · OCSP</div>
+    </div>
+    <div class="summary-card purple">
+      <div class="summary-label">AUTENTICACIÓN</div>
+      <div class="summary-value">WPA2-Enterprise</div>
+      <div class="summary-sub">PEAP · MSCHAPv2 · Túnel TLS</div>
+    </div>
+  </div>
+
+  <!-- Contexto -->
+  <div class="section-block reveal">
+    <div class="section-label">01_contexto</div>
+    <h2 class="section-title">PKI corporativa y autenticación centralizada para WiFi empresarial</h2>
+    <div class="prose">
+      <p>Este proyecto agrupa tres prácticas complementarias que construyen una <strong>infraestructura de confianza y autenticación centralizada</strong> para el IES Camp de Morvedre:</p>
+      <ul style="margin-left:2rem; color:var(--muted);">
+        <li><strong>PKI con Easy-RSA:</strong> implementación de una CA Raíz y una CA Intermedia, generación de certificados para servidores y clientes, revocación y listas CRL.</li>
+        <li><strong>Certificados en servicios web:</strong> despliegue de HTTPS en Apache con certificado firmado por la CA Intermedia, configuración de OCSP Stapling y validación de la cadena de confianza.</li>
+        <li><strong>Red WPA2-Enterprise con RADIUS + OpenLDAP:</strong> autenticación centralizada para WiFi corporativa, usando FreeRADIUS como servidor AAA y OpenLDAP como repositorio de usuarios, con protección mediante certificados y PEAP.</li>
+      </ul>
+      <p>El conjunto permite gestionar de forma segura las identidades digitales de la organización, proteger las comunicaciones y controlar el acceso a la red inalámbrica con mecanismos empresariales robustos.</p>
+    </div>
+  </div>
+
+  <!-- Arquitectura global -->
+  <div class="section-block reveal">
+    <div class="section-label">02_arquitectura</div>
+    <h2 class="section-title">Componentes de la infraestructura</h2>
+    <div class="arch-grid">
+      <div class="arch-block">
+        <h4>PKI CON EASY-RSA</h4>
+        <ul>
+          <li>CA Raíz independiente (servidor seguro, offline en producción)</li>
+          <li>CA Intermedia en Ubuntu Server del subsistema (Easy-RSA)</li>
+          <li>Fichero <code>vars</code> con datos de la organización (O, OU, CN, etc.)</li>
+          <li>Generación de CSR y firma por la CA Raíz</li>
+          <li>Emisión de certificados para servidor web, clientes y OCSP</li>
+          <li>Revocación de certificados y generación de CRL</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>SERVIDOR WEB (HTTPS + OCSP)</h4>
+        <ul>
+          <li>Apache2 con VirtualHost HTTPS (puerto 443)</li>
+          <li>Certificado del servidor firmado por la CA Intermedia</li>
+          <li>Cadena de certificados completa (Raíz + Intermedia)</li>
+          <li>OCSP Stapling habilitado (mejora rendimiento y privacidad)</li>
+          <li>Servicio OCSP en la CA Intermedia (puerto 8080)</li>
+          <li>Verificación de revocación en tiempo real</li>
+        </ul>
+      </div>
+      <div class="arch-block">
+        <h4>RADIUS + LDAP + WIFI ENTERPRISE</h4>
+        <ul>
+          <li>FreeRADIUS 3.2.5 como servidor AAA (autenticación + accounting)</li>
+          <li>OpenLDAP como repositorio central de usuarios y grupos</li>
+          <li>Router ASUS RT-N12E configurado como cliente RADIUS (WPA2-Enterprise, 802.1X)</li>
+          <li>Método EAP: PEAP con MSCHAPv2 dentro de túnel TLS</li>
+          <li>Certificado del servidor RADIUS firmado por la CA Intermedia</li>
+          <li>Políticas de autorización basadas en grupo LDAP (solo usuarios del grupo "direccionacc")</li>
+          <li>Accounting: registro de accesos aceptados y rechazados</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fases de implementación -->
+  <div class="section-block reveal">
+    <div class="section-label">03_implementación</div>
+    <h2 class="section-title">Proceso de despliegue (3 fases)</h2>
+    <div class="phases">
+      <div class="phase">
+        <div class="phase-dot">01</div>
+        <div class="phase-body">
+          <h4>PKI con Easy-RSA (CA Raíz + Intermedia)</h4>
+          <p>Instalación de Easy-RSA en Ubuntu Server. Configuración del fichero vars con los datos de la organización (IES Camp de Morvedre). Inicialización de la PKI y generación de la CA Intermedia. Envío de la CSR a la CA Raíz, firma y devolución del certificado. Importación y verificación de la cadena de confianza. Generación de tres certificados de prueba (servidor y dos clientes). Revocación de uno de ellos y actualización de la CRL.</p>
+          <div class="phase-tags"><span class="phase-tag">Easy-RSA</span><span class="phase-tag">OpenSSL</span><span class="phase-tag">CA</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">02</div>
+        <div class="phase-body">
+          <h4>Certificados en servicios web (Apache + OCSP)</h4>
+          <p>Generación de CSR para el dominio iescamp.mylocal. Firma por la CA Intermedia obteniendo un certificado de servidor. Transferencia segura de clave privada, certificado y cadena al servidor Apache. Configuración del VirtualHost HTTPS (SSLEngine on, SSLCertificateFile, SSLCertificateKeyFile, SSLCertificateChainFile). Configuración del servicio OCSP en la CA Intermedia (puerto 8080) y habilitación de OCSP Stapling en Apache. Revocación del certificado y comprobación del error en el navegador. Importación de la CA Raíz en el cliente y verificación de la conexión segura.</p>
+          <div class="phase-tags"><span class="phase-tag">Apache</span><span class="phase-tag">OCSP</span><span class="phase-tag">TLS</span></div>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-dot">03</div>
+        <div class="phase-body">
+          <h4>Red WPA2-Enterprise con RADIUS + OpenLDAP</h4>
+          <p>Instalación de FreeRADIUS y OpenLDAP. Configuración de UFW para permitir puertos 1812 (autenticación) y 1813 (accounting). Creación de usuarios y grupos en LDAP (alumno01, director). Configuración de clients.conf con el router ASUS como cliente RADIUS. Configuración del módulo EAP en mods-enabled/eap: uso de PEAP, certificados de la PKI, parámetros Diffie-Hellman. Integración de OpenLDAP en FreeRADIUS (archivo mods-available/ldap). Política de autorización: solo miembros del grupo "direccionacc" tienen acceso. Pruebas de conexión desde dispositivo Android, verificación de acceso aceptado para "director" y rechazado para "alumno01". Análisis de logs de accounting.</p>
+          <div class="phase-tags"><span class="phase-tag">FreeRADIUS</span><span class="phase-tag">OpenLDAP</span><span class="phase-tag">WPA2-Enterprise</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Problemas y soluciones reales -->
+  <div class="section-block reveal">
+    <div class="section-label">04_incidencias</div>
+    <h2 class="section-title">Hallazgos y medidas correctivas</h2>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <h4>PROBLEMA — Cadena de confianza no reconocida por el cliente</h4>
+        <p>Al acceder a la web https://iescamp.mylocal, el navegador mostraba un error de certificado no confiable porque la CA Raíz no estaba importada en el almacén del cliente.</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN</h4>
+        <p>Importación manual del certificado de la CA Raíz en el navegador (Firefox/Chrome) como entidad de confianza. Verificación de que la cadena completa (Raíz → Intermedia → servidor) aparece correctamente en las propiedades del certificado.</p>
+      </div>
+      <div class="problem-card">
+        <h4>PROBLEMA — OCSP Stapling no funcionaba inicialmente</h4>
+        <p>El servidor Apache no incluía la respuesta OCSP en el handshake TLS, lo que provocaba que el cliente tuviera que consultar directamente al respondedor OCSP.</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN</h4>
+        <p>Verificación de que el módulo mod_ssl estuviera habilitado. Configuración de <code>SSLUseStapling on</code> y <code>SSLStaplingCache "shmcb:logs/stapling-cache(150000)"</code>. Comprobación con <code>openssl s_client -connect iescamp.mylocal:443 -status</code> para confirmar la presencia de la respuesta OCSP.</p>
+      </div>
+      <div class="problem-card">
+        <h4>PROBLEMA — Usuarios LDAP no autenticaban en RADIUS</h4>
+        <p>Los intentos de conexión WiFi fallaban porque FreeRADIUS no conseguía consultar correctamente el directorio LDAP.</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN</h4>
+        <p>Revisión de la configuración de mods-available/ldap: verificar uri, base_dn, user_filter. Prueba de conexión con <code>ldapsearch</code>. Ajuste del filtro de autorización para que solo permita usuarios pertenecientes al grupo "direccionacc". Prueba exitosa con el usuario "director" y rechazo para "alumno01".</p>
+      </div>
+      <div class="problem-card">
+        <h4>PROBLEMA — Router doméstico sin soporte de VLANs</h4>
+        <p>El router ASUS RT-N12E no permite segmentar la red en VLANs, por lo que todos los usuarios autenticados comparten la misma subred LAN (192.168.98.0/24).</p>
+      </div>
+      <div class="solution-card">
+        <h4>SOLUCIÓN</h4>
+        <p>Se documenta la limitación y se asume que la seguridad se basa en el control de acceso a la red inalámbrica, no en la segmentación de red. En un entorno real se recomienda usar equipos con capacidad VLAN (MikroTik, Cisco) para aislar el tráfico de usuarios WiFi del resto de la infraestructura.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stack tecnológico -->
+  <div class="section-block reveal">
+    <div class="section-label">05_tecnologías</div>
+    <h2 class="section-title">Herramientas y estándares utilizados</h2>
+    <div class="tech-grid">
+      <div class="tech-item"><span class="tech-name">Easy-RSA</span><span class="tech-role">Gestión de PKI</span></div>
+      <div class="tech-item"><span class="tech-name">OpenSSL</span><span class="tech-role">Criptografía y certificados</span></div>
+      <div class="tech-item"><span class="tech-name">Apache2</span><span class="tech-role">Servidor web HTTPS</span></div>
+      <div class="tech-item"><span class="tech-name">FreeRADIUS</span><span class="tech-role">Servidor AAA (RADIUS)</span></div>
+      <div class="tech-item"><span class="tech-name">OpenLDAP</span><span class="tech-role">Directorio de usuarios</span></div>
+      <div class="tech-item"><span class="tech-name">ASUS RT-N12E</span><span class="tech-role">Punto de acceso (cliente RADIUS)</span></div>
+      <div class="tech-item"><span class="tech-name">WPA2-Enterprise</span><span class="tech-role">Estándar WiFi empresarial</span></div>
+      <div class="tech-item"><span class="tech-name">PEAP / MSCHAPv2</span><span class="tech-role">Método EAP</span></div>
+      <div class="tech-item"><span class="tech-name">OCSP / OCSP Stapling</span><span class="tech-role">Verificación de revocación</span></div>
+      <div class="tech-item"><span class="tech-name">UFW</span><span class="tech-role">Firewall</span></div>
+    </div>
+  </div>
+
+  <!-- Bloque de descargas (3 PDFs) -->
+  <div class="downloads-section reveal" id="downloads">
+    <h2>📄 Memorias completas de las prácticas</h2>
+    <p>Cada práctica está documentada con su propio PDF, incluyendo capturas, configuraciones y análisis de seguridad.</p>
+    <div class="dl-grid">
+      <div class="dl-card">
+        <div class="dl-card-icon">🔐</div>
+        <div class="dl-card-title">PKI con Easy-RSA (CA Raíz + Intermedia)</div>
+        <div class="dl-card-desc">Implementación de la infraestructura de clave pública, generación de certificados, revocación y listas CRL.</div>
+        <a href="docs/PKI_EasyRSA.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">🌐</div>
+        <div class="dl-card-title">Certificados en servicios web (Apache + OCSP)</div>
+        <div class="dl-card-desc">HTTPS con certificado propio, cadena de confianza, OCSP Stapling y verificación de revocación.</div>
+        <a href="docs/Certificados_Servicios_Web.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+      <div class="dl-card">
+        <div class="dl-card-icon">📶</div>
+        <div class="dl-card-title">Red WPA2-Enterprise con RADIUS + OpenLDAP</div>
+        <div class="dl-card-desc">FreeRADIUS, integración LDAP, autenticación PEAP, accounting y configuración del router ASUS.</div>
+        <a href="docs/WPA2_Enterprise_RADIUS_LDAP.pdf" class="dl-card-btn" download>↓ Descargar PDF</a>
+      </div>
+    </div>
+    <p style="margin-top:24px; font-size:.75rem; color:var(--muted); text-align:center;">📌 Los PDFs deben ubicarse en la carpeta <code>docs/</code> con los nombres mostrados. Ajusta las rutas según tu estructura real.</p>
+  </div>
+
+  <!-- Terminal de conclusiones -->
+  <div class="section-block reveal">
+    <div class="section-label">06_conclusiones</div>
+    <h2 class="section-title">Resultados y lecciones aprendidas</h2>
+    <div class="terminal">
+      <div class="term-header"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+      <div class="term-line"><span class="prompt">marina@pki-radius:~$</span> <span class="cmd">./verify_pki_deployment.sh</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] PKI completa operativa: CA Raíz e Intermedia, generación y revocación de certificados.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Servidor web con HTTPS, certificado válido y cadena de confianza verificada.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] OCSP Stapling habilitado y funcionando (respuesta OCSP incluida en handshake TLS).</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] FreeRADIUS + OpenLDAP: autenticación centralizada para WiFi WPA2-Enterprise.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Política de autorización por grupo LDAP: solo "direccionacc" tiene acceso.</span></div>
+      <div class="term-line"><span class="term-success">[ OK ] Accounting funcional: logs de accesos aceptados y rechazados.</span></div>
+      <div class="term-line"><span class="term-warn">[ MEJORA ] Migrar a WPA3-Enterprise cuando el hardware lo soporte.</span></div>
+      <div class="term-line"><span class="term-warn">[ MEJORA ] Implementar VLANs para aislar tráfico WiFi del resto de la red corporativa.</span></div>
+      <div class="term-line"><span class="prompt">marina@pki-radius:~$</span> <span class="cmd">echo "Infraestructura de autenticación y PKI completada según estándares"</span></div>
+      <div class="term-line"><span class="term-success">Infraestructura de autenticación y PKI completada según estándares</span></div>
+      <div class="term-line"><span class="prompt">marina@pki-radius:~$ <span class="cursor-blink">▊</span></span></div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-box reveal">
+    <h2>¿Necesitas una PKI corporativa o autenticación centralizada?</h2>
+    <p>Este proyecto demuestra que domino la implantación de una PKI completa con Easy-RSA, la protección de servicios web con certificados propios y la autenticación centralizada para redes WiFi empresariales mediante RADIUS y LDAP. Contacta conmigo para diseñar una solución similar en tu organización.</p>
+    <div class="cta-actions">
+      <a href="portfolio_marina.html#contact" class="btn-primary">→ Contactar</a>
+      <a href="portfolio_marina.html#portfolio" class="btn-outline">← Volver al portfolio</a>
+    </div>
+  </div>
+
+</div>
+
+<footer>MARINA DEL PILAR LÓPEZ OLIVA // PKI + RADIUS + LDAP + CERTIFICADOS // 2025-2026</footer>
+
+<script>
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
